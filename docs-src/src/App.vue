@@ -201,7 +201,7 @@ body {
 }
 
 .item {
-  height: 50px;
+  height: 100px;
   cursor: pointer;
   user-select: none;
   -moz-user-select: none;
@@ -242,7 +242,7 @@ table {
 .person .info {
   display: flex;
   align-items: center;
-  height: 48px;
+  height: 200px;
 }
 
 .avatar {
