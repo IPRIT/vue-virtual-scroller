@@ -19,7 +19,7 @@ export default {
     cjs(),
     vue({
       css (style) {
-        fs.writeFileSync('dist/vue-virtual-scroller.css', new CleanCSS().minify(style).styles)
+        fs.writeFileSync('dist/ssr-virtual-scroller.css', new CleanCSS().minify(style).styles)
       },
     }),
     babel({

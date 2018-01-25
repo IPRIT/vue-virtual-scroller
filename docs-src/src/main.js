@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VirtualScroller, { VirtualScroller as Comp } from '../../'
-import '../../dist/vue-virtual-scroller.css'
+import '../../dist/ssr-virtual-scroller.css'
 import App from './App.vue'
 
 console.log(VirtualScroller, Comp)

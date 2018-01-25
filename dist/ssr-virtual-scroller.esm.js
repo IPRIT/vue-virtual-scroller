@@ -1,9 +1,3 @@
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define(['exports'], factory) :
-	(factory((global['vue-virtual-scroller'] = {})));
-}(this, (function (exports) { 'use strict';
-
 function getInternetExplorerVersion() {
 	var ua = window.navigator.userAgent;
 
@@ -215,8 +209,12 @@ var VirtualScroller = { render: function render() {
       default: null
     },
     itemHeight: {
-      type: [Number, String],
+      type: Number,
       default: null
+    },
+    anyHeight: {
+      type: Boolean,
+      default: false
     },
     typeField: {
       type: String,
@@ -290,18 +288,8 @@ var VirtualScroller = { render: function render() {
         'virtual-scroller_mode_page': this.pageMode
       };
     },
-    heights: function heights() {
-      if (this.itemHeight === null) {
-        var heights = {};
-        var items = this.items;
-        var field = this.heightField;
-        var accumulator = 0;
-        for (var i = 0; i < items.length; i++) {
-          accumulator += items[i][field];
-          heights[i] = accumulator;
-        }
-        return heights;
-      }
+    isFloatingItemHeight: function isFloatingItemHeight() {
+      return this.itemHeight === null || this.anyHeight;
     }
   },
 
@@ -330,6 +318,7 @@ var VirtualScroller = { render: function render() {
     this.$_height = 0;
     this.$_scrollDirty = false;
     this.$_updateDirty = false;
+    this.$_heights = [];
 
     var prerender = parseInt(this.prerender);
     if (prerender > 0) {
@@ -358,6 +347,21 @@ var VirtualScroller = { render: function render() {
 
 
   methods: {
+    getHeights: function getHeights() {
+      if (this.isFloatingItemHeight) {
+        if (this.$_heights.length !== this.items.length) {
+          this.updateHeightsLength();
+        }
+        var heights = {};
+        var field = this.heightField;
+        var accumulator = 0;
+        for (var i = 0, length = this.items.length; i < length; i++) {
+          accumulator += this.$_heights[i] || this.items[i][field];
+          heights[i] = accumulator;
+        }
+        return heights;
+      }
+    },
     getScroll: function getScroll() {
       var el = this.$el;
       var scroll = void 0;
@@ -426,11 +430,13 @@ var VirtualScroller = { render: function render() {
           _this2.$_oldScrollTop = scrollTop;
           _this2.$_oldScrollBottom = scrollBottom;
 
-          var result = _this2.computeFrameOptions({ scrollTop: scrollTop, scrollBottom: scrollBottom });
-          startIndex = result.startIndex;
-          endIndex = result.endIndex;
-          offsetTop = result.offsetTop;
-          containerHeight = result.containerHeight;
+          var _computeFrameOptions = _this2.computeFrameOptions({ scrollTop: scrollTop, scrollBottom: scrollBottom });
+
+          startIndex = _computeFrameOptions.startIndex;
+          endIndex = _computeFrameOptions.endIndex;
+          offsetTop = _computeFrameOptions.offsetTop;
+          containerHeight = _computeFrameOptions.containerHeight;
+
 
           if (force || _this2.$_startIndex !== startIndex || _this2.$_endIndex !== endIndex || _this2.$_offsetTop !== offsetTop || _this2.$_height !== containerHeight || _this2.$_length !== l) {
             _this2.keysEnabled = !(startIndex > _this2.$_endIndex || endIndex < _this2.$_startIndex);
@@ -459,16 +465,17 @@ var VirtualScroller = { render: function render() {
             _this2.$_endIndex = endIndex;
             _this2.$_length = l;
             _this2.$_offsetTop = offsetTop;
+
+            // console.info('[Container Height From]:', this.$_height);
             _this2.$_height = containerHeight;
+            // console.info('[Container Height To]:', this.$_height);
 
-            console.log('Container', _this2.$_height);
-
-            if (_this2.itemHeight === null) {
-              requestAnimationFrame(function () {
-                var check = _this2.checkEqualHeights();
-                if (!check) {
+            if (_this2.isFloatingItemHeight) {
+              _this2.$nextTick(function () {
+                var isEqual = _this2.checkEqualHeights();
+                if (!isEqual) {
                   _this2.updateDynamicItemsHeights();
-                  _this2.updateVisibleItems(force);
+                  // this.updateVisibleItems(force);
                 }
               });
             }
@@ -476,12 +483,11 @@ var VirtualScroller = { render: function render() {
         });
       }
     },
-    computeFrameOptions: function computeStartEndIndexes(_ref) {
+    computeFrameOptions: function computeFrameOptions(_ref) {
       var scrollTop = _ref.scrollTop,
           scrollBottom = _ref.scrollBottom;
 
       var l = this.items.length;
-      var heights = this.heights;
 
       var offsetTop = void 0,
           containerHeight = void 0;
@@ -489,7 +495,8 @@ var VirtualScroller = { render: function render() {
       var endIndex = -1;
 
       // Variable height mode
-      if (this.itemHeight === null) {
+      if (this.isFloatingItemHeight) {
+        var heights = this.getHeights();
         var h = void 0;
         var a = 0;
         var b = l - 1;
@@ -538,7 +545,6 @@ var VirtualScroller = { render: function render() {
       }
 
       return {
-        heights: heights,
         startIndex: startIndex,
         endIndex: endIndex,
         offsetTop: offsetTop,
@@ -548,29 +554,38 @@ var VirtualScroller = { render: function render() {
     checkEqualHeights: function checkEqualHeights() {
       var _this3 = this;
 
-      return this.visibleItems.filter(function (item, index) {
-        return _this3.$refs.items.children && _this3.$refs.items.children[index];
-      }).every(function (item, index) {
-        var realItemHeight = _this3.$refs.items.children[index].offsetHeight;
-        return item[_this3.heightField] && item[_this3.heightField] === realItemHeight;
+      var children = this.$refs.items.children;
+      return this.visibleItems.every(function (item, index) {
+        if (children && children[index]) {
+          var realItemHeight = children[index].offsetHeight;
+          return _this3.$_heights[_this3.$_startIndex + index] === realItemHeight;
+        }
       });
     },
+    updateHeightsLength: function updateHeightsLength() {
+      var diffIndexes = this.items.length - this.$_heights.length;
+      if (diffIndexes > 0) {
+        var dummyItems = Array(diffIndexes).fill(this.itemHeight || 50);
+        this.$_heights = this.$_heights.concat(dummyItems);
+      } else {
+        this.$_heights.splice(diffIndexes);
+      }
+    },
     updateDynamicItemsHeights: function updateDynamicItemsHeights() {
+      var children = this.$refs.items.children;
       for (var i = 0, length = this.visibleItems.length; i < length; ++i) {
-        if (!this.$refs.items.children || !this.$refs.items.children[i]) {
+        if (!children || !children[i]) {
           continue;
         }
-        var realItemHeight = this.$refs.items.children[i].offsetHeight;
+        var realItemHeight = children[i].offsetHeight;
         var globalIndex = this.$_startIndex + i;
-        if (this.items[globalIndex]) {
-          this.items[globalIndex][this.heightField] = realItemHeight;
-        }
+        this.$_heights[globalIndex] = realItemHeight;
       }
     },
     scrollToItem: function scrollToItem(index) {
       var scrollTop = void 0;
-      if (this.itemHeight === null) {
-        scrollTop = index > 0 ? this.heights[index - 1] : 0;
+      if (this.isFloatingItemHeight) {
+        scrollTop = index > 0 ? this.getHeights()[index - 1] : 0;
       } else {
         scrollTop = index * this.itemHeight;
       }
@@ -631,7 +646,7 @@ function registerComponents(Vue, prefix) {
 
 var plugin$4 = {
   // eslint-disable-next-line no-undef
-  version: "1.0.1",
+  version: "1.0.5",
   install: function install(Vue, options) {
     var finalOptions = Object.assign({}, {
       installComponents: true,
@@ -655,9 +670,5 @@ if (GlobalVue$2) {
   GlobalVue$2.use(plugin$4);
 }
 
-exports.VirtualScroller = VirtualScroller;
-exports.default = plugin$4;
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-})));
+export default plugin$4;
+export { VirtualScroller };

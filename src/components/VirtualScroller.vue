@@ -157,19 +157,6 @@
         };
       },
 
-      heights () {
-        if (this.isFloatingItemHeight) {
-          const heights = {};
-          const field = this.heightField;
-          let accumulator = 0;
-          for (let i = 0, length = this.items.length; i < length; i++) {
-            accumulator += (this.items[i][field] || 50);
-            heights[i] = accumulator;
-          }
-          return heights;
-        }
-      },
-
       isFloatingItemHeight () {
         return this.itemHeight === null || this.anyHeight;
       },
@@ -198,6 +185,7 @@
       this.$_height = 0;
       this.$_scrollDirty = false;
       this.$_updateDirty = false;
+      this.$_heights = [];
 
       const prerender = parseInt(this.prerender);
       if (prerender > 0) {
@@ -225,6 +213,21 @@
     },
 
     methods: {
+      getHeights () {
+        if (this.isFloatingItemHeight) {
+          if (this.$_heights.length !== this.items.length) {
+            this.updateHeightsLength();
+          }
+          const heights = {};
+          const field = this.heightField;
+          let accumulator = 0;
+          for (let i = 0, length = this.items.length; i < length; i++) {
+            accumulator += (this.$_heights[i] || this.items[i][field]);
+            heights[i] = accumulator;
+          }
+          return heights;
+        }
+      },
       getScroll () {
         const el = this.$el;
         let scroll;
@@ -330,16 +333,17 @@
               this.$_endIndex = endIndex;
               this.$_length = l;
               this.$_offsetTop = offsetTop;
-              this.$_height = containerHeight;
 
-              console.info('[Container Height]:', this.$_height);
+              // console.info('[Container Height From]:', this.$_height);
+              this.$_height = containerHeight;
+              // console.info('[Container Height To]:', this.$_height);
 
               if (this.isFloatingItemHeight) {
                 this.$nextTick(() => {
                   let isEqual = this.checkEqualHeights();
                   if (!isEqual) {
                     this.updateDynamicItemsHeights();
-                    this.updateVisibleItems(force);
+                    // this.updateVisibleItems(force);
                   }
                 });
               }
@@ -357,7 +361,7 @@
 
         // Variable height mode
         if (this.isFloatingItemHeight) {
-          const heights = this.heights;
+          const heights = this.getHeights();
           let h;
           let a = 0;
           let b = l - 1;
@@ -418,9 +422,19 @@
         return this.visibleItems.every((item, index) => {
           if (children && children[index]) {
             let realItemHeight = children[index].offsetHeight;
-            return item[this.heightField] === realItemHeight;
+            return this.$_heights[this.$_startIndex + index] === realItemHeight;
           }
         });
+      },
+
+      updateHeightsLength () {
+        const diffIndexes = this.items.length - this.$_heights.length;
+        if (diffIndexes > 0) {
+          let dummyItems = Array(diffIndexes).fill(this.itemHeight || 50);
+          this.$_heights = this.$_heights.concat(dummyItems);
+        } else {
+          this.$_heights.splice(diffIndexes);
+        }
       },
 
       updateDynamicItemsHeights () {
@@ -431,21 +445,14 @@
           }
           let realItemHeight = children[i].offsetHeight;
           let globalIndex = this.$_startIndex + i;
-          if (this.items[globalIndex]) {
-            if (typeof this.items[globalIndex][this.heightField] !== 'undefined') {
-              this.items[globalIndex][this.heightField] = realItemHeight;
-            } else {
-              // create reactive property if not exist
-              this.$set(this.items[globalIndex], this.heightField, realItemHeight);
-            }
-          }
+          this.$_heights[ globalIndex ] = realItemHeight;
         }
       },
 
       scrollToItem (index) {
         let scrollTop;
         if (this.isFloatingItemHeight) {
-          scrollTop = index > 0 ? this.heights[index - 1] : 0;
+          scrollTop = index > 0 ? this.getHeights()[index - 1] : 0;
         } else {
           scrollTop = index * this.itemHeight;
         }

@@ -21,6 +21,7 @@
       </span>
       <span>
         <button @mousedown="showScroller = !showScroller">Toggle scroller</button>
+        <button @mousedown="addItems()">Add 100 items</button>
         <label><input type="checkbox" v-model="scopedSlots" /> Scoped slots</label>
       </span>
 
@@ -138,6 +139,17 @@ export default {
       console.log('Generated ' + items.length + ' in ' + this.generateTime + 'ms')
       this._dirty = true
       this.items = items
+    },
+
+    addItems () {
+      console.log('Generating ' + this.count + ' items...')
+      let time = Date.now()
+      const items = getData(100, this.enableLetters)
+      this._time = Date.now()
+      this.generateTime = this._time - time
+      console.log('Generated ' + items.length + ' in ' + this.generateTime + 'ms')
+      this._dirty = true
+      this.items.push(...items);
     },
 
     onUpdate (startIndex, endIndex) {

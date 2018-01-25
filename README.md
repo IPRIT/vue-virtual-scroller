@@ -1,11 +1,10 @@
 # ssr-virtual-scroller
 
-It's forked version of vue-virtual-scroller with some fixes and other bem-styled css classes
 
-[![npm](https://img.shields.io/npm/v/vue-virtual-scroller.svg) ![npm](https://img.shields.io/npm/dm/vue-virtual-scroller.svg)](https://www.npmjs.com/package/vue-virtual-scroller)
+[![npm](https://img.shields.io/npm/v/ssr-virtual-scroller.svg) ![npm](https://img.shields.io/npm/dm/ssr-virtual-scroller.svg)](https://www.npmjs.com/package/ssr-virtual-scroller)
 [![vue2](https://img.shields.io/badge/vue-2.x-brightgreen.svg)](https://vuejs.org/)
 
-Smooth scroll with any amount of data ([demo](https://akryum.github.io/vue-virtual-scroller/)).
+Smooth scroll with any amount of data with SSR support and any height of an item.
 
 ## Table of contents
 
@@ -16,10 +15,10 @@ Smooth scroll with any amount of data ([demo](https://akryum.github.io/vue-virtu
 # Installation
 
 ```
-npm install --save vue-virtual-scroller
+npm install --save ssr-virtual-scroller
 ```
 
-**⚠️ `vue-virtual-scroller` now uses [vue-observe-visibility](https://github.com/Akryum/vue-observe-visibility#installation) to automatically refresh itself when shown to prevent display glitches. This means you need to include the polyfills needed by `vue-observe-visibility` for this to work.**
+**⚠️ `ssr-virtual-scroller` now uses [vue-observe-visibility](https://github.com/Akryum/vue-observe-visibility#installation) to automatically refresh itself when shown to prevent display glitches. This means you need to include the polyfills needed by `vue-observe-visibility` for this to work.**
 
 ## Default import
 
@@ -27,7 +26,7 @@ Install all the components:
 
 ```javascript
 import Vue from 'vue'
-import VueVirtualScroller from 'vue-virtual-scroller'
+import VueVirtualScroller from 'ssr-virtual-scroller'
 
 Vue.use(VueVirtualScroller)
 ```
@@ -36,7 +35,7 @@ Use specific components:
 
 ```javascript
 import Vue from 'vue'
-import { VirtualScroller } from 'vue-virtual-scroller'
+import { VirtualScroller } from 'ssr-virtual-scroller'
 
 Vue.component('virtual-scroller', VirtualScroller)
 ```
@@ -44,16 +43,16 @@ Vue.component('virtual-scroller', VirtualScroller)
 **⚠️ A css file is included when importing the package:**
 
 ```js
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+import 'ssr-virtual-scroller/dist/ssr-virtual-scroller.css'
 ```
 
 ## Browser
 
 ```html
-<link rel="stylesheet" href="vue-virtual-scroller/dist/vue-virtual-scroller.css"/>
+<link rel="stylesheet" href="ssr-virtual-scroller/dist/ssr-virtual-scroller.css"/>
 
 <script src="vue.js"></script>
-<script src="vue-virtual-scroller/dist/vue-virtual-scroller.min.js"></script>
+<script src="ssr-virtual-scroller/dist/ssr-virtual-scroller.min.js"></script>
 ```
 
 If Vue is detected, the plugin will be installed automatically. If not, install the component:
@@ -178,6 +177,20 @@ The default value is `200`.
 ```html
 <virtual-scroller buffer="200" />
 ```
+
+## Any height
+
+You can set the `anyHeight` prop on the virtual-scroller to automatically compute height for visible elements and update the entire container.
+
+```html
+<virtual-scroller :items="items" anyHeight />
+```
+
+With item height 100px
+```html
+<virtual-scroller :items="items" anyHeight :itemHeight="100" />
+```
+The default value is `50`.
 
 ## Pool Size
 

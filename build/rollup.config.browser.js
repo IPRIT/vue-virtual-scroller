@@ -5,8 +5,8 @@ import { minify } from 'uglify-es'
 const config = Object.assign({}, base, {
   output: {
     exports: 'named',
-    name: 'VueVirtualScroller',
-    file: 'dist/vue-virtual-scroller.min.js',
+    name: 'SsrVirtualScroller',
+    file: 'dist/ssr-virtual-scroller.min.js',
     format: 'iife',
   },
 })
