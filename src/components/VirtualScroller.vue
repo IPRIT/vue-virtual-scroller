@@ -220,8 +220,7 @@
           }
           const heights = {};
           const field = this.heightField;
-          let accumulator = 0;
-          for (let i = 0, length = this.items.length; i < length; i++) {
+          for (let i = 0, length = this.items.length, accumulator = 0; i < length; ++i) {
             accumulator += (this.$_heights[i] || this.items[i][field]);
             heights[i] = accumulator;
           }

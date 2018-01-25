@@ -354,8 +354,7 @@ var VirtualScroller = { render: function render() {
         }
         var heights = {};
         var field = this.heightField;
-        var accumulator = 0;
-        for (var i = 0, length = this.items.length; i < length; i++) {
+        for (var i = 0, length = this.items.length, accumulator = 0; i < length; ++i) {
           accumulator += this.$_heights[i] || this.items[i][field];
           heights[i] = accumulator;
         }

@@ -26,6 +26,27 @@
       </span>
 
     </div>
+
+    <div class="dialog">
+      <virtual-scroller v-if="scopedSlots"
+                        class="scroller"
+                        :items="items"
+                        :itemHeight="54"
+                        :anyHeight="enableLetters"
+                        mainTag="section"
+                        contentTag="table"
+                        :buffer="buffer"
+                        :poolSize="poolSize">
+        <template slot-scope="props">
+          <tr v-if="props.item.type === 'letter'" class="letter" :key="props.itemKey">
+            <td class="index">{{props.item.index}}</td>
+            <td>{{props.item.value}} Scoped</td>
+          </tr>
+          <item v-if="props.item.type === 'person'" :item="props.item" :key="props.itemKey"></item>
+        </template>
+      </virtual-scroller>
+    </div>
+
     <div class="content" v-if="showScroller">
       <div class="wrapper">
         <virtual-scroller v-if="scopedSlots"
@@ -224,6 +245,7 @@ body {
 .scroller {
   width: 100%;
   height: 100%;
+  max-height: 500px;
 }
 
 .item-container {
@@ -281,4 +303,20 @@ table {
   height: 50px;
   margin-right: 12px;
 }
+  .dialog {
+    position: fixed;
+    margin: 100px;
+    margin-top: 0;
+    min-width: 400px;
+    min-height: 400px;
+    max-height: calc(100% - 200px);
+    box-sizing: border-box;
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 2px 2px rgba(0,0,0,.1);
+    z-index: 2;
+    overflow: hidden;
+    top: 100px;
+  }
 </style>
