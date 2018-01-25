@@ -403,106 +403,168 @@ var VirtualScroller = { render: function render() {
           var l = _this2.items.length;
           var scroll = _this2.getScroll();
           var items = _this2.items;
-          var itemHeight = _this2.itemHeight;
           var containerHeight = void 0,
               offsetTop = void 0;
-          if (scroll) {
-            var startIndex = -1;
-            var endIndex = -1;
 
-            var buffer = parseInt(_this2.buffer);
-            var poolSize = parseInt(_this2.poolSize);
-            var scrollTop = ~~(scroll.top / poolSize) * poolSize - buffer;
-            var scrollBottom = Math.ceil(scroll.bottom / poolSize) * poolSize + buffer;
+          if (!scroll) {
+            return;
+          }
 
-            if (!force && (scrollTop === _this2.$_oldScrollTop && scrollBottom === _this2.$_oldScrollBottom || _this2.$_skip)) {
-              _this2.$_skip = false;
-              return;
-            } else {
-              _this2.$_oldScrollTop = scrollTop;
-              _this2.$_oldScrollBottom = scrollBottom;
-            }
+          var startIndex = -1;
+          var endIndex = -1;
 
-            // Variable height mode
-            if (itemHeight === null) {
-              var heights = _this2.heights;
-              var h = void 0;
-              var a = 0;
-              var b = l - 1;
-              var i = ~~(l / 2);
-              var oldI = void 0;
+          var buffer = parseInt(_this2.buffer);
+          var poolSize = parseInt(_this2.poolSize);
+          var scrollTop = ~~(scroll.top / poolSize) * poolSize - buffer;
+          var scrollBottom = Math.ceil(scroll.bottom / poolSize) * poolSize + buffer;
 
-              // Searching for startIndex
-              do {
-                oldI = i;
-                h = heights[i];
-                if (h < scrollTop) {
-                  a = i;
-                } else if (i < l && heights[i + 1] > scrollTop) {
-                  b = i;
-                }
-                i = ~~((a + b) / 2);
-              } while (i !== oldI);
-              i < 0 && (i = 0);
-              startIndex = i;
+          if (!force && (scrollTop === _this2.$_oldScrollTop && scrollBottom === _this2.$_oldScrollBottom || _this2.$_skip)) {
+            _this2.$_skip = false;
+            return;
+          }
 
-              // For containers style
-              offsetTop = i > 0 ? heights[i - 1] : 0;
-              containerHeight = heights[l - 1];
+          _this2.$_oldScrollTop = scrollTop;
+          _this2.$_oldScrollBottom = scrollBottom;
 
-              // Searching for endIndex
-              for (endIndex = i; endIndex < l && heights[endIndex] < scrollBottom; endIndex++) {}
-              if (endIndex === -1) {
-                endIndex = items.length - 1;
-              } else {
-                endIndex++;
-                // Bounds
-                endIndex > l && (endIndex = l);
-              }
-            } else {
-              // Fixed height mode
-              startIndex = ~~(scrollTop / itemHeight);
-              endIndex = Math.ceil(scrollBottom / itemHeight);
+          var result = _this2.computeFrameOptions({ scrollTop: scrollTop, scrollBottom: scrollBottom });
+          startIndex = result.startIndex;
+          endIndex = result.endIndex;
+          offsetTop = result.offsetTop;
+          containerHeight = result.containerHeight;
 
-              // Bounds
-              startIndex < 0 && (startIndex = 0);
-              endIndex > l && (endIndex = l);
+          if (force || _this2.$_startIndex !== startIndex || _this2.$_endIndex !== endIndex || _this2.$_offsetTop !== offsetTop || _this2.$_height !== containerHeight || _this2.$_length !== l) {
+            _this2.keysEnabled = !(startIndex > _this2.$_endIndex || endIndex < _this2.$_startIndex);
 
-              offsetTop = startIndex * itemHeight;
-              containerHeight = l * itemHeight;
-            }
+            _this2.itemContainerStyle = {
+              height: containerHeight + 'px'
+            };
+            _this2.itemsStyle = {
+              marginTop: offsetTop + 'px'
+            };
 
-            if (force || _this2.$_startIndex !== startIndex || _this2.$_endIndex !== endIndex || _this2.$_offsetTop !== offsetTop || _this2.$_height !== containerHeight || _this2.$_length !== l) {
-              _this2.keysEnabled = !(startIndex > _this2.$_endIndex || endIndex < _this2.$_startIndex);
-
-              _this2.itemContainerStyle = {
-                height: containerHeight + 'px'
-              };
-              _this2.itemsStyle = {
-                marginTop: offsetTop + 'px'
-              };
-
-              if (_this2.delayPreviousItems) {
-                // Add next items
-                _this2.visibleItems = items.slice(_this2.$_startIndex, endIndex);
-                // Remove previous items
-                _this2.$nextTick(function () {
-                  _this2.visibleItems = items.slice(startIndex, endIndex);
-                });
-              } else {
+            if (_this2.delayPreviousItems) {
+              // Add next items
+              _this2.visibleItems = items.slice(_this2.$_startIndex, endIndex);
+              // Remove previous items
+              _this2.$nextTick(function () {
                 _this2.visibleItems = items.slice(startIndex, endIndex);
-              }
+              });
+            } else {
+              _this2.visibleItems = items.slice(startIndex, endIndex);
+            }
 
-              _this2.emitUpdate && _this2.$emit('update', startIndex, endIndex);
+            _this2.emitUpdate && _this2.$emit('update', startIndex, endIndex);
 
-              _this2.$_startIndex = startIndex;
-              _this2.$_endIndex = endIndex;
-              _this2.$_length = l;
-              _this2.$_offsetTop = offsetTop;
-              _this2.$_height = containerHeight;
+            _this2.$_startIndex = startIndex;
+            _this2.$_endIndex = endIndex;
+            _this2.$_length = l;
+            _this2.$_offsetTop = offsetTop;
+            _this2.$_height = containerHeight;
+
+            console.log('Container', _this2.$_height);
+
+            if (_this2.itemHeight === null) {
+              requestAnimationFrame(function () {
+                var check = _this2.checkEqualHeights();
+                if (!check) {
+                  _this2.updateDynamicItemsHeights();
+                  _this2.updateVisibleItems(force);
+                }
+              });
             }
           }
         });
+      }
+    },
+    computeFrameOptions: function computeStartEndIndexes(_ref) {
+      var scrollTop = _ref.scrollTop,
+          scrollBottom = _ref.scrollBottom;
+
+      var l = this.items.length;
+      var heights = this.heights;
+
+      var offsetTop = void 0,
+          containerHeight = void 0;
+      var startIndex = -1;
+      var endIndex = -1;
+
+      // Variable height mode
+      if (this.itemHeight === null) {
+        var h = void 0;
+        var a = 0;
+        var b = l - 1;
+        var i = ~~(l / 2);
+        var oldI = void 0;
+
+        // Searching for startIndex
+        do {
+          oldI = i;
+          h = heights[i];
+          if (h < scrollTop) {
+            a = i;
+          } else if (i < l && heights[i + 1] > scrollTop) {
+            b = i;
+          }
+          i = ~~((a + b) / 2);
+        } while (i !== oldI);
+        i < 0 && (i = 0);
+        startIndex = i;
+
+        // Searching for endIndex
+        for (endIndex = i; endIndex < l && heights[endIndex] < scrollBottom; endIndex++) {}
+
+        if (endIndex === -1) {
+          endIndex = this.items.length - 1;
+        } else {
+          endIndex++;
+          // Bounds
+          endIndex > l && (endIndex = l);
+        }
+
+        // For containers style
+        offsetTop = i > 0 ? heights[i - 1] : 0;
+        containerHeight = heights[l - 1];
+      } else {
+        // Fixed height mode
+        startIndex = ~~(scrollTop / this.itemHeight);
+        endIndex = Math.ceil(scrollBottom / this.itemHeight);
+
+        // Bounds
+        startIndex < 0 && (startIndex = 0);
+        endIndex > l && (endIndex = l);
+
+        offsetTop = startIndex * this.itemHeight;
+        containerHeight = l * this.itemHeight;
+      }
+
+      return {
+        heights: heights,
+        startIndex: startIndex,
+        endIndex: endIndex,
+        offsetTop: offsetTop,
+        containerHeight: containerHeight
+      };
+    },
+    checkEqualHeights: function checkEqualHeights() {
+      var _this3 = this;
+
+      return this.visibleItems.filter(function (item, index) {
+        return _this3.$refs.items.children && _this3.$refs.items.children[index];
+      }).every(function (item, index) {
+        var realItemHeight = _this3.$refs.items.children[index].offsetHeight;
+        return item[_this3.heightField] && item[_this3.heightField] === realItemHeight;
+      });
+    },
+    updateDynamicItemsHeights: function updateDynamicItemsHeights() {
+      for (var i = 0, length = this.visibleItems.length; i < length; ++i) {
+        if (!this.$refs.items.children || !this.$refs.items.children[i]) {
+          continue;
+        }
+        var realItemHeight = this.$refs.items.children[i].offsetHeight;
+        var globalIndex = this.$_startIndex + i;
+        if (this.items[globalIndex]) {
+          this.items[globalIndex][this.heightField] = realItemHeight;
+        }
       }
     },
     scrollToItem: function scrollToItem(index) {
@@ -534,27 +596,29 @@ var VirtualScroller = { render: function render() {
       window.removeEventListener('resize', this.handleResize);
     },
     handleScroll: function handleScroll() {
-      var _this3 = this;
+      var _this4 = this;
 
       if (!this.$_scrollDirty) {
         this.$_scrollDirty = true;
         requestAnimationFrame(function () {
-          _this3.$_scrollDirty = false;
-          _this3.updateVisibleItems();
+          _this4.$_scrollDirty = false;
+          _this4.updateVisibleItems();
         });
       }
     },
     handleResize: function handleResize() {
       this.$emit('resize');
-      this.$_ready && this.updateVisibleItems();
+      if (this.$_ready) {
+        this.updateVisibleItems();
+      }
     },
     handleVisibilityChange: function handleVisibilityChange(isVisible, entry) {
-      var _this4 = this;
+      var _this5 = this;
 
       if (this.$_ready && (isVisible || entry.boundingClientRect.width !== 0 || entry.boundingClientRect.height !== 0)) {
         this.$emit('visible');
         this.$nextTick(function () {
-          _this4.updateVisibleItems();
+          _this5.updateVisibleItems();
         });
       }
     }

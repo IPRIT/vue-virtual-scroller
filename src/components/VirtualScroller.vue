@@ -78,8 +78,12 @@
         default: null,
       },
       itemHeight: {
-        type: [Number, String],
+        type: Number,
         default: null,
+      },
+      anyHeight: {
+        type: Boolean,
+        default: false,
       },
       typeField: {
         type: String,
@@ -154,17 +158,20 @@
       },
 
       heights () {
-        if (this.itemHeight === null) {
+        if (this.isFloatingItemHeight) {
           const heights = {};
-          const items = this.items;
           const field = this.heightField;
           let accumulator = 0;
-          for (let i = 0; i < items.length; i++) {
-            accumulator += items[i][field];
+          for (let i = 0, length = this.items.length; i < length; i++) {
+            accumulator += (this.items[i][field] || 50);
             heights[i] = accumulator;
           }
           return heights;
         }
+      },
+
+      isFloatingItemHeight () {
+        return this.itemHeight === null || this.anyHeight;
       },
     },
 
@@ -274,7 +281,9 @@
             const scrollTop = ~~(scroll.top / poolSize) * poolSize - buffer;
             const scrollBottom = Math.ceil(scroll.bottom / poolSize) * poolSize + buffer;
 
-            if (!force && ((scrollTop === this.$_oldScrollTop && scrollBottom === this.$_oldScrollBottom) || this.$_skip)) {
+            if (!force && (
+              (scrollTop === this.$_oldScrollTop && scrollBottom === this.$_oldScrollBottom) || this.$_skip
+            )) {
               this.$_skip = false;
               return;
             }
@@ -282,11 +291,10 @@
             this.$_oldScrollTop = scrollTop;
             this.$_oldScrollBottom = scrollBottom;
 
-            let result = this.computeStartEndIndexes({ scrollTop, scrollBottom });
-            startIndex = result.startIndex;
-            endIndex = result.endIndex;
-            offsetTop = result.offsetTop;
-            containerHeight = result.containerHeight;
+            ({
+              startIndex, endIndex,
+              offsetTop, containerHeight,
+            } = this.computeFrameOptions({ scrollTop, scrollBottom }));
 
             if (
               force ||
@@ -299,10 +307,10 @@
               this.keysEnabled = !(startIndex > this.$_endIndex || endIndex < this.$_startIndex);
 
               this.itemContainerStyle = {
-                height: containerHeight + 'px',
+                height: `${containerHeight}px`,
               };
               this.itemsStyle = {
-                marginTop: offsetTop + 'px',
+                marginTop: `${offsetTop}px`,
               };
 
               if (this.delayPreviousItems) {
@@ -324,12 +332,12 @@
               this.$_offsetTop = offsetTop;
               this.$_height = containerHeight;
 
-              console.log('Container', this.$_height);
+              console.info('[Container Height]:', this.$_height);
 
-              if (this.itemHeight === null) {
-                requestAnimationFrame(() => {
-                  let check = this.checkEqualHeights();
-                  if (!check) {
+              if (this.isFloatingItemHeight) {
+                this.$nextTick(() => {
+                  let isEqual = this.checkEqualHeights();
+                  if (!isEqual) {
                     this.updateDynamicItemsHeights();
                     this.updateVisibleItems(force);
                   }
@@ -340,16 +348,16 @@
         }
       },
 
-      computeStartEndIndexes ({ scrollTop, scrollBottom }) {
+      computeFrameOptions ({ scrollTop, scrollBottom }) {
         const l = this.items.length;
-        const heights = this.heights;
 
         let offsetTop, containerHeight;
         let startIndex = -1;
         let endIndex = -1;
 
         // Variable height mode
-        if (this.itemHeight === null) {
+        if (this.isFloatingItemHeight) {
+          const heights = this.heights;
           let h;
           let a = 0;
           let b = l - 1;
@@ -398,7 +406,6 @@
         }
 
         return {
-          heights,
           startIndex,
           endIndex,
           offsetTop,
@@ -407,30 +414,37 @@
       },
 
       checkEqualHeights () {
-        return this.visibleItems.filter((item, index) => {
-          return this.$refs.items.children && this.$refs.items.children[index];
-        }).every((item, index) => {
-          let realItemHeight = this.$refs.items.children[index].offsetHeight;
-          return item[this.heightField] && item[this.heightField] === realItemHeight;
+        const children = this.$refs.items.children;
+        return this.visibleItems.every((item, index) => {
+          if (children && children[index]) {
+            let realItemHeight = children[index].offsetHeight;
+            return item[this.heightField] === realItemHeight;
+          }
         });
       },
 
       updateDynamicItemsHeights () {
+        const children = this.$refs.items.children;
         for (let i = 0, length = this.visibleItems.length; i < length; ++i) {
-          if (!this.$refs.items.children || !this.$refs.items.children[i]) {
+          if (!children || !children[i]) {
             continue;
           }
-          let realItemHeight = this.$refs.items.children[i].offsetHeight;
+          let realItemHeight = children[i].offsetHeight;
           let globalIndex = this.$_startIndex + i;
           if (this.items[globalIndex]) {
-            this.items[globalIndex][this.heightField] = realItemHeight;
+            if (typeof this.items[globalIndex][this.heightField] !== 'undefined') {
+              this.items[globalIndex][this.heightField] = realItemHeight;
+            } else {
+              // create reactive property if not exist
+              this.$set(this.items[globalIndex], this.heightField, realItemHeight);
+            }
           }
         }
       },
 
       scrollToItem (index) {
         let scrollTop;
-        if (this.itemHeight === null) {
+        if (this.isFloatingItemHeight) {
           scrollTop = index > 0 ? this.heights[index - 1] : 0;
         } else {
           scrollTop = index * this.itemHeight;

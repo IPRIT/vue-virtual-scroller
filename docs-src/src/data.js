@@ -15,6 +15,7 @@ export function getData (count, letters) {
       avatar: faker.internet.avatar(),
     }
     const letter = item.name.charAt(0).toLowerCase()
+    item.name = item.name.repeat(Math.floor(Math.random() * 100) + 1);
     raw[letter].push(item)
   }
 
@@ -36,7 +37,6 @@ export function getData (count, letters) {
         index: index++,
         type: 'person',
         value: item,
-        height: 50,
       })
     }
   }

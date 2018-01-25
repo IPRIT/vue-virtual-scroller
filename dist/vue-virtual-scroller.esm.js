@@ -209,8 +209,12 @@ var VirtualScroller = { render: function render() {
       default: null
     },
     itemHeight: {
-      type: [Number, String],
+      type: Number,
       default: null
+    },
+    anyHeight: {
+      type: Boolean,
+      default: false
     },
     typeField: {
       type: String,
@@ -285,17 +289,19 @@ var VirtualScroller = { render: function render() {
       };
     },
     heights: function heights() {
-      if (this.itemHeight === null) {
+      if (this.isFloatingItemHeight) {
         var heights = {};
-        var items = this.items;
         var field = this.heightField;
         var accumulator = 0;
-        for (var i = 0; i < items.length; i++) {
-          accumulator += items[i][field];
+        for (var i = 0, length = this.items.length; i < length; i++) {
+          accumulator += this.items[i][field] || 50;
           heights[i] = accumulator;
         }
         return heights;
       }
+    },
+    isFloatingItemHeight: function isFloatingItemHeight() {
+      return this.itemHeight === null || this.anyHeight;
     }
   },
 
@@ -420,11 +426,13 @@ var VirtualScroller = { render: function render() {
           _this2.$_oldScrollTop = scrollTop;
           _this2.$_oldScrollBottom = scrollBottom;
 
-          var result = _this2.computeStartEndIndexes({ scrollTop: scrollTop, scrollBottom: scrollBottom });
-          startIndex = result.startIndex;
-          endIndex = result.endIndex;
-          offsetTop = result.offsetTop;
-          containerHeight = result.containerHeight;
+          var _computeFrameOptions = _this2.computeFrameOptions({ scrollTop: scrollTop, scrollBottom: scrollBottom });
+
+          startIndex = _computeFrameOptions.startIndex;
+          endIndex = _computeFrameOptions.endIndex;
+          offsetTop = _computeFrameOptions.offsetTop;
+          containerHeight = _computeFrameOptions.containerHeight;
+
 
           if (force || _this2.$_startIndex !== startIndex || _this2.$_endIndex !== endIndex || _this2.$_offsetTop !== offsetTop || _this2.$_height !== containerHeight || _this2.$_length !== l) {
             _this2.keysEnabled = !(startIndex > _this2.$_endIndex || endIndex < _this2.$_startIndex);
@@ -455,12 +463,12 @@ var VirtualScroller = { render: function render() {
             _this2.$_offsetTop = offsetTop;
             _this2.$_height = containerHeight;
 
-            console.log('Container', _this2.$_height);
+            console.info('[Container Height]:', _this2.$_height);
 
-            if (_this2.itemHeight === null) {
-              requestAnimationFrame(function () {
-                var check = _this2.checkEqualHeights();
-                if (!check) {
+            if (_this2.isFloatingItemHeight) {
+              _this2.$nextTick(function () {
+                var isEqual = _this2.checkEqualHeights();
+                if (!isEqual) {
                   _this2.updateDynamicItemsHeights();
                   _this2.updateVisibleItems(force);
                 }
@@ -470,12 +478,11 @@ var VirtualScroller = { render: function render() {
         });
       }
     },
-    computeStartEndIndexes: function computeStartEndIndexes(_ref) {
+    computeFrameOptions: function computeFrameOptions(_ref) {
       var scrollTop = _ref.scrollTop,
           scrollBottom = _ref.scrollBottom;
 
       var l = this.items.length;
-      var heights = this.heights;
 
       var offsetTop = void 0,
           containerHeight = void 0;
@@ -483,7 +490,8 @@ var VirtualScroller = { render: function render() {
       var endIndex = -1;
 
       // Variable height mode
-      if (this.itemHeight === null) {
+      if (this.isFloatingItemHeight) {
+        var heights = this.heights;
         var h = void 0;
         var a = 0;
         var b = l - 1;
@@ -532,7 +540,6 @@ var VirtualScroller = { render: function render() {
       }
 
       return {
-        heights: heights,
         startIndex: startIndex,
         endIndex: endIndex,
         offsetTop: offsetTop,
@@ -542,28 +549,35 @@ var VirtualScroller = { render: function render() {
     checkEqualHeights: function checkEqualHeights() {
       var _this3 = this;
 
-      return this.visibleItems.filter(function (item, index) {
-        return _this3.$refs.items.children && _this3.$refs.items.children[index];
-      }).every(function (item, index) {
-        var realItemHeight = _this3.$refs.items.children[index].offsetHeight;
-        return item[_this3.heightField] && item[_this3.heightField] === realItemHeight;
+      var children = this.$refs.items.children;
+      return this.visibleItems.every(function (item, index) {
+        if (children && children[index]) {
+          var realItemHeight = children[index].offsetHeight;
+          return item[_this3.heightField] === realItemHeight;
+        }
       });
     },
     updateDynamicItemsHeights: function updateDynamicItemsHeights() {
+      var children = this.$refs.items.children;
       for (var i = 0, length = this.visibleItems.length; i < length; ++i) {
-        if (!this.$refs.items.children || !this.$refs.items.children[i]) {
+        if (!children || !children[i]) {
           continue;
         }
-        var realItemHeight = this.$refs.items.children[i].offsetHeight;
+        var realItemHeight = children[i].offsetHeight;
         var globalIndex = this.$_startIndex + i;
         if (this.items[globalIndex]) {
-          this.items[globalIndex][this.heightField] = realItemHeight;
+          if (typeof this.items[globalIndex][this.heightField] !== 'undefined') {
+            this.items[globalIndex][this.heightField] = realItemHeight;
+          } else {
+            // create reactive property if not exist
+            this.$set(this.items[globalIndex], this.heightField, realItemHeight);
+          }
         }
       }
     },
     scrollToItem: function scrollToItem(index) {
       var scrollTop = void 0;
-      if (this.itemHeight === null) {
+      if (this.isFloatingItemHeight) {
         scrollTop = index > 0 ? this.heights[index - 1] : 0;
       } else {
         scrollTop = index * this.itemHeight;

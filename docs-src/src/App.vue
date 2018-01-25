@@ -27,10 +27,18 @@
     </div>
     <div class="content" v-if="showScroller">
       <div class="wrapper">
-        <!-- Scoped slots -->
-        <virtual-scroller v-if="scopedSlots" class="scroller" :item-height="itemHeight" :items="items" main-tag="section" content-tag="table" :buffer="buffer" :pool-size="poolSize" emit-update @update="onUpdate">
+        <virtual-scroller v-if="scopedSlots"
+                          class="scroller"
+                          :items="items"
+                          :itemHeight="54"
+                          :anyHeight="enableLetters"
+                          mainTag="section"
+                          contentTag="table"
+                          :buffer="buffer"
+                          :poolSize="poolSize"
+                          emitUpdate
+                          @update="onUpdate">
           <template slot-scope="props">
-            <!-- <letter v-if="props.item.type === 'letter'" :item="props.item"></letter>-->
             <tr v-if="props.item.type === 'letter'" class="letter" :key="props.itemKey">
               <td class="index">
                 {{props.item.index}}
@@ -43,8 +51,18 @@
           </template>
         </virtual-scroller>
 
-        <!-- Renderers -->
-        <virtual-scroller v-else class="scroller" :item-height="itemHeight" :items="items" :renderers="renderers" type-field="type" key-field="index" main-tag="section" content-tag="table" :buffer="buffer" :pool-size="poolSize" emit-update @update="onUpdate"/>
+        <virtual-scroller v-else
+                          class="scroller"
+                          :items="items"
+                          :renderers="renderers"
+                          type-field="type"
+                          key-field="index"
+                          main-tag="section"
+                          content-tag="table"
+                          :buffer="buffer"
+                          :pool-size="poolSize"
+                          emit-update
+                          @update="onUpdate"/>
       </div>
     </div>
   </div>
@@ -70,11 +88,11 @@ export default {
   data: () => ({
     items: [],
     renderers,
-    count: 10000,
+    count: 1000,
     generateTime: null,
     updateTime: null,
     showScroller: true,
-    scopedSlots: false,
+    scopedSlots: true,
     buffer: 200,
     poolSize: 2000,
     enableLetters: true,
@@ -241,8 +259,9 @@ table {
 
 .person .info {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  height: 200px;
+  border: 1px solid #ff4834;
 }
 
 .avatar {
