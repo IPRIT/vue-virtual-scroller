@@ -39,7 +39,7 @@
                           :poolSize="poolSize"
                           emitUpdate
                           @update="onUpdate">
-          <template slot-scope="props">
+          <template slot="item" slot-scope="props">
             <tr v-if="props.item.type === 'letter'" class="letter" :key="props.itemKey">
               <td class="index">
                 {{props.item.index}}

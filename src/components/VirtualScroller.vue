@@ -36,6 +36,7 @@
 
         <template v-else>
           <slot
+            name="item"
             class="virtual-scroller__item"
             v-for="(item, index) in visibleItems"
             :item="item"

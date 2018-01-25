@@ -187,7 +187,7 @@ var VirtualScroller = { render: function render() {
         } } }, [_vm._t("before-container"), _vm._v(" "), _c(_vm.containerTag, { ref: "itemContainer", tag: "component", staticClass: "virtual-scroller__item-container", class: _vm.containerClass, style: _vm.itemContainerStyle }, [_vm._t("before-content"), _vm._v(" "), _c(_vm.contentTag, { ref: "items", tag: "component", staticClass: "virtual-scroller__items", class: _vm.contentClass, style: _vm.itemsStyle }, [_vm.renderers ? _vm._l(_vm.visibleItems, function (item, index) {
       return _c(_vm.renderers[item[_vm.typeField]], { key: _vm.keysEnabled && item[_vm.keyField] || undefined, tag: "component", staticClass: "virtual-scroller__item", attrs: { "item": item, "item-index": _vm.$_startIndex + index } });
     }) : [_vm._l(_vm.visibleItems, function (item, index) {
-      return _vm._t("default", null, { item: item, itemIndex: _vm.$_startIndex + index, itemKey: _vm.keysEnabled && item[_vm.keyField] || undefined });
+      return _vm._t("item", null, { item: item, itemIndex: _vm.$_startIndex + index, itemKey: _vm.keysEnabled && item[_vm.keyField] || undefined });
     })]], 2), _vm._v(" "), _vm._t("after-content")], 2), _vm._v(" "), _vm._t("after-container"), _vm._v(" "), _c('resize-observer', { on: { "notify": _vm.handleResize } })], 2);
   }, staticRenderFns: [],
   name: 'virtual-scroller',
@@ -646,7 +646,7 @@ function registerComponents(Vue, prefix) {
 
 var plugin$4 = {
   // eslint-disable-next-line no-undef
-  version: "1.0.5",
+  version: "1.0.6",
   install: function install(Vue, options) {
     var finalOptions = Object.assign({}, {
       installComponents: true,
