@@ -27,7 +27,7 @@
 
     </div>
 
-    <div class="dialog">
+    <!--<div class="dialog">
       <virtual-scroller v-if="scopedSlots"
                         class="scroller"
                         :items="items"
@@ -45,7 +45,7 @@
           <item v-if="props.item.type === 'person'" :item="props.item" :key="props.itemKey"></item>
         </template>
       </virtual-scroller>
-    </div>
+    </div>-->
 
     <div class="content" v-if="showScroller">
       <div class="wrapper">
@@ -60,7 +60,7 @@
                           :poolSize="poolSize"
                           emitUpdate
                           @update="onUpdate">
-          <template slot-scope="props">
+          <template slot="item" slot-scope="props">
             <tr v-if="props.item.type === 'letter'" class="letter" :key="props.itemKey">
               <td class="index">
                 {{props.item.index}}
@@ -245,7 +245,6 @@ body {
 .scroller {
   width: 100%;
   height: 100%;
-  max-height: 500px;
 }
 
 .item-container {
@@ -318,5 +317,9 @@ table {
     z-index: 2;
     overflow: hidden;
     top: 100px;
+  }
+
+  .dialog .scroller {
+    max-height: 500px;
   }
 </style>

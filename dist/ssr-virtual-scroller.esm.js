@@ -187,7 +187,7 @@ var VirtualScroller = { render: function render() {
         } } }, [_vm._t("before-container"), _vm._v(" "), _c(_vm.containerTag, { ref: "itemContainer", tag: "component", staticClass: "virtual-scroller__item-container", class: _vm.containerClass, style: _vm.itemContainerStyle }, [_vm._t("before-content"), _vm._v(" "), _c(_vm.contentTag, { ref: "items", tag: "component", staticClass: "virtual-scroller__items", class: _vm.contentClass, style: _vm.itemsStyle }, [_vm.renderers ? _vm._l(_vm.visibleItems, function (item, index) {
       return _c(_vm.renderers[item[_vm.typeField]], { key: _vm.keysEnabled && item[_vm.keyField] || undefined, tag: "component", staticClass: "virtual-scroller__item", attrs: { "item": item, "item-index": _vm.$_startIndex + index } });
     }) : [_vm._l(_vm.visibleItems, function (item, index) {
-      return _vm._t("default", null, { item: item, itemIndex: _vm.$_startIndex + index, itemKey: _vm.keysEnabled && item[_vm.keyField] || undefined });
+      return _vm._t("item", null, { item: item, itemIndex: _vm.$_startIndex + index, itemKey: _vm.keysEnabled && item[_vm.keyField] || undefined });
     })]], 2), _vm._v(" "), _vm._t("after-content")], 2), _vm._v(" "), _vm._t("after-container"), _vm._v(" "), _c('resize-observer', { on: { "notify": _vm.handleResize } })], 2);
   }, staticRenderFns: [],
   name: 'virtual-scroller',
@@ -352,10 +352,11 @@ var VirtualScroller = { render: function render() {
         if (this.$_heights.length !== this.items.length) {
           this.updateHeightsLength();
         }
+        // console.log('heights original', this.$_heights);
         var heights = {};
-        var field = this.heightField;
+        // const field = this.heightField;
         for (var i = 0, length = this.items.length, accumulator = 0; i < length; ++i) {
-          accumulator += this.$_heights[i] || this.items[i][field];
+          accumulator += this.$_heights[i];
           heights[i] = accumulator;
         }
         return heights;
@@ -420,6 +421,7 @@ var VirtualScroller = { render: function render() {
           var poolSize = parseInt(_this2.poolSize);
           var scrollTop = ~~(scroll.top / poolSize) * poolSize - buffer;
           var scrollBottom = Math.ceil(scroll.bottom / poolSize) * poolSize + buffer;
+          // console.log('scroll', scroll, scrollTop, scrollBottom);
 
           if (!force && (scrollTop === _this2.$_oldScrollTop && scrollBottom === _this2.$_oldScrollBottom || _this2.$_skip)) {
             _this2.$_skip = false;
@@ -457,6 +459,8 @@ var VirtualScroller = { render: function render() {
             } else {
               _this2.visibleItems = items.slice(startIndex, endIndex);
             }
+
+            // console.log('Visible items', this.visibleItems);
 
             _this2.emitUpdate && _this2.$emit('update', startIndex, endIndex);
 
@@ -496,6 +500,7 @@ var VirtualScroller = { render: function render() {
       // Variable height mode
       if (this.isFloatingItemHeight) {
         var heights = this.getHeights();
+        // console.log('heights', heights);
         var h = void 0;
         var a = 0;
         var b = l - 1;
@@ -516,8 +521,12 @@ var VirtualScroller = { render: function render() {
         i < 0 && (i = 0);
         startIndex = i;
 
+        // console.info('debug', startIndex, endIndex);
+
         // Searching for endIndex
         for (endIndex = i; endIndex < l && heights[endIndex] < scrollBottom; endIndex++) {}
+
+        // console.info('debug', startIndex, endIndex);
 
         if (endIndex === -1) {
           endIndex = this.items.length - 1;
@@ -526,6 +535,8 @@ var VirtualScroller = { render: function render() {
           // Bounds
           endIndex > l && (endIndex = l);
         }
+
+        // console.info('debug', startIndex, endIndex);
 
         // For containers style
         offsetTop = i > 0 ? heights[i - 1] : 0;
@@ -563,6 +574,7 @@ var VirtualScroller = { render: function render() {
     },
     updateHeightsLength: function updateHeightsLength() {
       var diffIndexes = this.items.length - this.$_heights.length;
+      // console.log('diffIndexes', diffIndexes);
       if (diffIndexes > 0) {
         var dummyItems = Array(diffIndexes).fill(this.itemHeight || 50);
         this.$_heights = this.$_heights.concat(dummyItems);
@@ -578,7 +590,7 @@ var VirtualScroller = { render: function render() {
         }
         var realItemHeight = children[i].offsetHeight;
         var globalIndex = this.$_startIndex + i;
-        this.$_heights[globalIndex] = realItemHeight;
+        this.$_heights[globalIndex] = realItemHeight === 0 ? this.$_heights[globalIndex] : realItemHeight;
       }
     },
     scrollToItem: function scrollToItem(index) {
@@ -645,7 +657,7 @@ function registerComponents(Vue, prefix) {
 
 var plugin$4 = {
   // eslint-disable-next-line no-undef
-  version: "1.0.8",
+  version: "1.0.20",
   install: function install(Vue, options) {
     var finalOptions = Object.assign({}, {
       installComponents: true,

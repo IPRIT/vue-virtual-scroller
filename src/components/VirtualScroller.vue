@@ -36,6 +36,7 @@
 
         <template v-else>
           <slot
+            name="item"
             class="virtual-scroller__item"
             v-for="(item, index) in visibleItems"
             :item="item"
@@ -218,10 +219,11 @@
           if (this.$_heights.length !== this.items.length) {
             this.updateHeightsLength();
           }
+          // console.log('heights original', this.$_heights);
           const heights = {};
-          const field = this.heightField;
+          // const field = this.heightField;
           for (let i = 0, length = this.items.length, accumulator = 0; i < length; ++i) {
-            accumulator += (this.$_heights[i] || this.items[i][field]);
+            accumulator += this.$_heights[i];
             heights[i] = accumulator;
           }
           return heights;
@@ -282,6 +284,7 @@
             const poolSize = parseInt(this.poolSize);
             const scrollTop = ~~(scroll.top / poolSize) * poolSize - buffer;
             const scrollBottom = Math.ceil(scroll.bottom / poolSize) * poolSize + buffer;
+            // console.log('scroll', scroll, scrollTop, scrollBottom);
 
             if (!force && (
               (scrollTop === this.$_oldScrollTop && scrollBottom === this.$_oldScrollBottom) || this.$_skip
@@ -326,6 +329,8 @@
                 this.visibleItems = items.slice(startIndex, endIndex);
               }
 
+              // console.log('Visible items', this.visibleItems);
+
               this.emitUpdate && this.$emit('update', startIndex, endIndex);
 
               this.$_startIndex = startIndex;
@@ -361,6 +366,7 @@
         // Variable height mode
         if (this.isFloatingItemHeight) {
           const heights = this.getHeights();
+          // console.log('heights', heights);
           let h;
           let a = 0;
           let b = l - 1;
@@ -381,8 +387,12 @@
           i < 0 && (i = 0);
           startIndex = i;
 
+          // console.info('debug', startIndex, endIndex);
+
           // Searching for endIndex
           for (endIndex = i; endIndex < l && heights[endIndex] < scrollBottom; endIndex++);
+
+          // console.info('debug', startIndex, endIndex);
 
           if (endIndex === -1) {
             endIndex = this.items.length - 1;
@@ -391,6 +401,8 @@
             // Bounds
             endIndex > l && (endIndex = l);
           }
+
+          // console.info('debug', startIndex, endIndex);
 
           // For containers style
           offsetTop = i > 0 ? heights[i - 1] : 0;
@@ -428,6 +440,7 @@
 
       updateHeightsLength () {
         const diffIndexes = this.items.length - this.$_heights.length;
+        // console.log('diffIndexes', diffIndexes);
         if (diffIndexes > 0) {
           let dummyItems = Array(diffIndexes).fill(this.itemHeight || 50);
           this.$_heights = this.$_heights.concat(dummyItems);
@@ -444,7 +457,8 @@
           }
           let realItemHeight = children[i].offsetHeight;
           let globalIndex = this.$_startIndex + i;
-          this.$_heights[ globalIndex ] = realItemHeight;
+          this.$_heights[ globalIndex ] = realItemHeight === 0
+            ? this.$_heights[ globalIndex ] : realItemHeight;
         }
       },
 
