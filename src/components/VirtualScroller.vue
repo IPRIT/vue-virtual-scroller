@@ -58,6 +58,7 @@
 <script>
   import { ResizeObserver } from 'vue-resize';
   import { ObserveVisibility } from 'vue-observe-visibility';
+  import { SumTree } from '../lib/sum-tree';
 
   export default {
     name: 'virtual-scroller',
@@ -187,6 +188,7 @@
       this.$_scrollDirty = false;
       this.$_updateDirty = false;
       this.$_heights = [];
+      this.$_sumTree = new SumTree();
 
       const prerender = parseInt(this.prerender);
       if (prerender > 0) {
@@ -219,9 +221,7 @@
           if (this.$_heights.length !== this.items.length) {
             this.updateHeightsLength();
           }
-          // console.log('heights original', this.$_heights);
           const heights = {};
-          // const field = this.heightField;
           for (let i = 0, length = this.items.length, accumulator = 0; i < length; ++i) {
             accumulator += this.$_heights[i];
             heights[i] = accumulator;
@@ -284,7 +284,6 @@
             const poolSize = parseInt(this.poolSize);
             const scrollTop = ~~(scroll.top / poolSize) * poolSize - buffer;
             const scrollBottom = Math.ceil(scroll.bottom / poolSize) * poolSize + buffer;
-            // console.log('scroll', scroll, scrollTop, scrollBottom);
 
             if (!force && (
               (scrollTop === this.$_oldScrollTop && scrollBottom === this.$_oldScrollBottom) || this.$_skip
@@ -329,18 +328,13 @@
                 this.visibleItems = items.slice(startIndex, endIndex);
               }
 
-              // console.log('Visible items', this.visibleItems);
-
               this.emitUpdate && this.$emit('update', startIndex, endIndex);
 
               this.$_startIndex = startIndex;
               this.$_endIndex = endIndex;
               this.$_length = l;
               this.$_offsetTop = offsetTop;
-
-              // console.info('[Container Height From]:', this.$_height);
               this.$_height = containerHeight;
-              // console.info('[Container Height To]:', this.$_height);
 
               if (this.isFloatingItemHeight) {
                 this.$nextTick(() => {
@@ -366,7 +360,6 @@
         // Variable height mode
         if (this.isFloatingItemHeight) {
           const heights = this.getHeights();
-          // console.log('heights', heights);
           let h;
           let a = 0;
           let b = l - 1;
@@ -387,12 +380,8 @@
           i < 0 && (i = 0);
           startIndex = i;
 
-          // console.info('debug', startIndex, endIndex);
-
           // Searching for endIndex
           for (endIndex = i; endIndex < l && heights[endIndex] < scrollBottom; endIndex++);
-
-          // console.info('debug', startIndex, endIndex);
 
           if (endIndex === -1) {
             endIndex = this.items.length - 1;
@@ -401,8 +390,6 @@
             // Bounds
             endIndex > l && (endIndex = l);
           }
-
-          // console.info('debug', startIndex, endIndex);
 
           // For containers style
           offsetTop = i > 0 ? heights[i - 1] : 0;
@@ -440,12 +427,13 @@
 
       updateHeightsLength () {
         const diffIndexes = this.items.length - this.$_heights.length;
-        // console.log('diffIndexes', diffIndexes);
         if (diffIndexes > 0) {
-          let dummyItems = Array(diffIndexes).fill(this.itemHeight || 50);
-          this.$_heights = this.$_heights.concat(dummyItems);
+          let tailItems = Array(diffIndexes).fill(this.itemHeight || 50);
+          this.$_heights = this.$_heights.concat(tailItems);
+          this.sumTree.extendBy(diffIndexes);
         } else {
           this.$_heights.splice(diffIndexes);
+          this.sumTree.reduceBy(diffIndexes);
         }
       },
 
