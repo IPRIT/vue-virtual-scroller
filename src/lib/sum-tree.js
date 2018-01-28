@@ -1,3 +1,4 @@
+
 export class SumTree {
 
   constructor () {
@@ -18,7 +19,7 @@ export class SumTree {
   }
 
   update ({ from = 0, to = values.length - 1, values = [] }) {
-    this._assertEqual(to - from, values.length, 'Received lengths must be equal');
+    this._assertEqual(to - from + 1, values.length, 'Received lengths must be equal');
     this._assertEqual(values.length <= this._tree.length, true, 'Sub array must be less than original tree');
     this._assertEqual(to - from >= 0, true, '`From` must be less than `to`');
 
@@ -67,13 +68,11 @@ export class SumTree {
 
   extendBy (number, value = 0) {
     let newItems = Array(number).fill(value);
-    this._tree = this._revertedTree
-      ? newItems.concat(this._tree) : this._tree.concat(newItems);
+    this._tree = this._tree.concat(newItems);
   }
 
   reduceBy (number) {
-    this._revertedTree
-      ? this._tree.splice(0, number) : this._tree.splice(-number);
+    this._tree.splice(-number);
   }
 
   /**
@@ -93,7 +92,7 @@ export class SumTree {
   _assertEqual (value1, value2, message) {
     if (value1 !== value2) {
       // throw new Error(message);
-      console.error(message);
+      console.error(value1, value2, message);
     }
   }
 }

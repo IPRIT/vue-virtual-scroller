@@ -436,12 +436,12 @@
 
         let [ from, to ] = [
           this.$_startIndex,
-          this.$_startIndex + this.visibleItems.length
+          this.$_startIndex + this.visibleItems.length - 1
         ];
         if (needTreeUpdate && from < to) {
           this.$_sumTree.update({
             from, to,
-            values: this.$_heights.slice(from, to)
+            values: this.$_heights.slice(from, to + 1)
           });
         }
       },

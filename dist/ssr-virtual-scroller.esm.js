@@ -236,7 +236,7 @@ var SumTree = function () {
           _ref$values = _ref.values,
           values = _ref$values === undefined ? [] : _ref$values;
 
-      this._assertEqual(to - from, values.length, 'Received lengths must be equal');
+      this._assertEqual(to - from + 1, values.length, 'Received lengths must be equal');
       this._assertEqual(values.length <= this._tree.length, true, 'Sub array must be less than original tree');
       this._assertEqual(to - from >= 0, true, '`From` must be less than `to`');
 
@@ -291,12 +291,12 @@ var SumTree = function () {
       var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
       var newItems = Array(number).fill(value);
-      this._tree = this._revertedTree ? newItems.concat(this._tree) : this._tree.concat(newItems);
+      this._tree = this._tree.concat(newItems);
     }
   }, {
     key: 'reduceBy',
     value: function reduceBy(number) {
-      this._revertedTree ? this._tree.splice(0, number) : this._tree.splice(-number);
+      this._tree.splice(-number);
     }
 
     /**
@@ -323,7 +323,7 @@ var SumTree = function () {
     value: function _assertEqual(value1, value2, message) {
       if (value1 !== value2) {
         // throw new Error(message);
-        console.error(message);
+        console.error(value1, value2, message);
       }
     }
   }]);
@@ -717,14 +717,14 @@ var VirtualScroller = { render: function render() {
         }
       }
 
-      var _ref2 = [this.$_startIndex, this.$_startIndex + this.visibleItems.length],
+      var _ref2 = [this.$_startIndex, this.$_startIndex + this.visibleItems.length - 1],
           from = _ref2[0],
           to = _ref2[1];
 
       if (needTreeUpdate && from < to) {
         this.$_sumTree.update({
           from: from, to: to,
-          values: this.$_heights.slice(from, to)
+          values: this.$_heights.slice(from, to + 1)
         });
       }
     },
