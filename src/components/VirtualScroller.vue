@@ -189,6 +189,7 @@
       this.$_updateDirty = false;
       this.$_heights = [];
       this.$_sumTree = new SumTree();
+      this.$_sumTree.setPerformanceMode(SumTree.descending);
 
       const prerender = parseInt(this.prerender);
       if (prerender > 0) {
@@ -216,19 +217,6 @@
     },
 
     methods: {
-      getHeights () {
-        if (this.isFloatingItemHeight) {
-          if (this.$_heights.length !== this.items.length) {
-            this.updateHeightsLength();
-          }
-          const heights = {};
-          for (let i = 0, length = this.items.length, accumulator = 0; i < length; ++i) {
-            accumulator += this.$_heights[i];
-            heights[i] = accumulator;
-          }
-          return heights;
-        }
-      },
       getScroll () {
         const el = this.$el;
         let scroll;
@@ -338,11 +326,8 @@
 
               if (this.isFloatingItemHeight) {
                 this.$nextTick(() => {
-                  let isEqual = this.checkEqualHeights();
-                  if (!isEqual) {
-                    this.updateDynamicItemsHeights();
-                    // this.updateVisibleItems(force);
-                  }
+                  this.updateDynamicItemsHeights();
+                  // this.updateVisibleItems(force);
                 });
               }
             }
@@ -359,7 +344,9 @@
 
         // Variable height mode
         if (this.isFloatingItemHeight) {
-          const heights = this.getHeights();
+          if (this.$_heights.length !== this.items.length) {
+            this.updateHeightsLength();
+          }
           let h;
           let a = 0;
           let b = l - 1;
@@ -369,10 +356,10 @@
           // Searching for startIndex
           do {
             oldI = i;
-            h = heights[i];
+            h = this.$_sumTree.sumAt(i) // heights[i];
             if (h < scrollTop) {
               a = i;
-            } else if (i < l && heights[i + 1] > scrollTop) {
+            } else if (i < l && this.$_sumTree.sumAt(i + 1) > scrollTop) {
               b = i;
             }
             i = ~~((a + b) / 2);
@@ -381,7 +368,7 @@
           startIndex = i;
 
           // Searching for endIndex
-          for (endIndex = i; endIndex < l && heights[endIndex] < scrollBottom; endIndex++);
+          for (endIndex = i; endIndex < l && this.$_sumTree.sumAt(endIndex) < scrollBottom; endIndex++);
 
           if (endIndex === -1) {
             endIndex = this.items.length - 1;
@@ -392,8 +379,8 @@
           }
 
           // For containers style
-          offsetTop = i > 0 ? heights[i - 1] : 0;
-          containerHeight = heights[l - 1];
+          offsetTop = this.$_sumTree.sumAt(i - 1);
+          containerHeight = this.$_sumTree.sumAt(l - 1);
         } else {
           // Fixed height mode
           startIndex = ~~(scrollTop / this.itemHeight);
@@ -415,45 +402,54 @@
         };
       },
 
-      checkEqualHeights () {
-        const children = this.$refs.items.children;
-        return this.visibleItems.every((item, index) => {
-          if (children && children[index]) {
-            let realItemHeight = children[index].offsetHeight;
-            return this.$_heights[this.$_startIndex + index] === realItemHeight;
-          }
-        });
-      },
-
       updateHeightsLength () {
         const diffIndexes = this.items.length - this.$_heights.length;
         if (diffIndexes > 0) {
           let tailItems = Array(diffIndexes).fill(this.itemHeight || 50);
           this.$_heights = this.$_heights.concat(tailItems);
-          this.sumTree.extendBy(diffIndexes);
+          this.$_sumTree.extendBy(diffIndexes);
         } else {
           this.$_heights.splice(diffIndexes);
-          this.sumTree.reduceBy(diffIndexes);
+          this.$_sumTree.reduceBy(diffIndexes);
         }
+        this.$_sumTree.update({
+          to: this.$_heights.length - 1,
+          values: this.$_heights
+        });
       },
 
       updateDynamicItemsHeights () {
         const children = this.$refs.items.children;
+        let needTreeUpdate = false;
+
         for (let i = 0, length = this.visibleItems.length; i < length; ++i) {
           if (!children || !children[i]) {
             continue;
           }
           let realItemHeight = children[i].offsetHeight;
           let globalIndex = this.$_startIndex + i;
-          this.$_heights[ globalIndex ] = realItemHeight === 0
-            ? this.$_heights[ globalIndex ] : realItemHeight;
+          if (this.$_heights[ globalIndex ] !== realItemHeight) {
+            needTreeUpdate = true;
+            this.$_heights[ globalIndex ] = realItemHeight;
+          }
+        }
+
+        let [ from, to ] = [
+          this.$_startIndex,
+          this.$_startIndex + this.visibleItems.length
+        ];
+        if (needTreeUpdate && from < to) {
+          this.$_sumTree.update({
+            from, to,
+            values: this.$_heights.slice(from, to)
+          });
         }
       },
 
       scrollToItem (index) {
         let scrollTop;
         if (this.isFloatingItemHeight) {
-          scrollTop = index > 0 ? this.getHeights()[index - 1] : 0;
+          scrollTop = this.$_sumTree.sumAt(index - 1);
         } else {
           scrollTop = index * this.itemHeight;
         }

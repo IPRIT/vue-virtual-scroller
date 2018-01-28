@@ -21,7 +21,7 @@
     "build:es": "rollup --config build/rollup.config.es.js",
     "build:umd": "rollup --config build/rollup.config.umd.js",
     "release": "node ./node_modules/.bin/standard-version",
-    "prepublish": "npm run build && npm run release",
+    "prepublish": "npm run build",
     "dev": "cross-env NODE_ENV=development rollup --config build/rollup.config.es.js --watch"
   },
   "repository": {
