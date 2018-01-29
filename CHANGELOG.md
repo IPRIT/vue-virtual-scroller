@@ -2,23 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.1.4"></a>
+## [1.1.4](https://github.com/IPRIT/vue-virtual-repeater/compare/v1.1.3...v1.1.4) (2018-01-29)
+
+
+
 <a name="1.1.3"></a>
-## [1.1.3](https://github.com/IPRIT/vue-virtual-list/compare/v1.1.2...v1.1.3) (2018-01-29)
+## [1.1.3](https://github.com/IPRIT/vue-virtual-repeater/compare/v1.1.2...v1.1.3) (2018-01-29)
 
 
 
 <a name="1.1.2"></a>
-## [1.1.2](https://github.com/IPRIT/vue-virtual-list/compare/v1.1.1...v1.1.2) (2018-01-29)
+## [1.1.2](https://github.com/IPRIT/vue-virtual-repeater/compare/v1.1.1...v1.1.2) (2018-01-29)
 
 
 
 <a name="1.1.1"></a>
-## [1.1.1](https://github.com/IPRIT/vue-virtual-list/compare/v1.0.25...v1.1.1) (2018-01-29)
+## [1.1.1](https://github.com/IPRIT/vue-virtual-repeater/compare/v1.0.25...v1.1.1) (2018-01-29)
 
 
 
 <a name="1.0.25"></a>
-## [1.0.25](https://github.com/IPRIT/vue-virtual-list/compare/v1.0.24...v1.0.25) (2018-01-29)
+## [1.0.25](https://github.com/IPRIT/vue-virtual-repeater/compare/v1.0.24...v1.0.25) (2018-01-29)
 
 
 
