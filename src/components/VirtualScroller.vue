@@ -50,7 +50,7 @@
 
     <slot name="after-container"></slot>
 
-    <resize-observer @notify="handleResize" />
+    <resize-observer @notify="handleResize"></resize-observer>
 
   </component>
 </template>
@@ -58,88 +58,89 @@
 <script>
   import { ResizeObserver } from 'vue-resize';
   import { ObserveVisibility } from 'vue-observe-visibility';
+  import { SumTree } from '../lib/sum-tree';
 
   export default {
     name: 'virtual-scroller',
 
     components: {
-      ResizeObserver,
+      ResizeObserver
     },
 
     directives: {
-      ObserveVisibility,
+      ObserveVisibility
     },
 
     props: {
       items: {
         type: Array,
-        required: true,
+        required: true
       },
       renderers: {
-        default: null,
+        default: null
       },
       itemHeight: {
         type: Number,
-        default: null,
+        default: null
       },
       anyHeight: {
         type: Boolean,
-        default: false,
+        default: false
       },
       typeField: {
         type: String,
-        default: 'type',
+        default: 'type'
       },
       keyField: {
         type: String,
-        default: 'id',
+        default: 'id'
       },
       heightField: {
         type: String,
-        default: 'height',
+        default: 'height'
       },
       mainTag: {
         type: String,
-        default: 'div',
+        default: 'div'
       },
       containerTag: {
         type: String,
-        default: 'div',
+        default: 'div'
       },
       containerClass: {
-        default: null,
+        default: null
       },
       contentTag: {
         type: String,
-        default: 'div',
+        default: 'div'
       },
       contentClass: {
-        default: null,
+        default: null
       },
       pageMode: {
         type: Boolean,
-        default: false,
+        default: false
       },
       buffer: {
         type: [Number, String],
-        default: 200,
+        default: 200
       },
       poolSize: {
         type: [Number, String],
-        default: 2000,
+        default: 2000
       },
       prerender: {
         type: [Number, String],
-        default: 0,
+        default: 0
       },
       emitUpdate: {
         type: Boolean,
-        default: false,
+        default: false
       },
       delayPreviousItems: {
         type: Boolean,
-        default: false,
-      },
+        default: false
+      }
     },
 
     data () {
@@ -147,20 +148,20 @@
         visibleItems: [],
         itemContainerStyle: null,
         itemsStyle: null,
-        keysEnabled: true,
+        keysEnabled: true
       };
     },
 
     computed: {
       cssClass () {
         return {
-          'virtual-scroller_mode_page': this.pageMode,
+          'virtual-scroller_mode_page': this.pageMode
         };
       },
 
       isFloatingItemHeight () {
         return this.itemHeight === null || this.anyHeight;
-      },
+      }
     },
 
     watch: {
@@ -168,13 +169,13 @@
         handler () {
           this.updateVisibleItems(true);
         },
-        deep: true,
+        deep: true
       },
       pageMode () {
         this.applyPageMode();
         this.updateVisibleItems(true);
       },
-      itemHeight: 'setDirty',
+      itemHeight: 'setDirty'
     },
 
     created () {
@@ -187,6 +188,8 @@
       this.$_scrollDirty = false;
       this.$_updateDirty = false;
       this.$_heights = [];
+      this.$_sumTree = new SumTree();
+      this.$_sumTree.setPerformanceMode(SumTree.descending);
 
       const prerender = parseInt(this.prerender);
       if (prerender > 0) {
@@ -211,24 +214,11 @@
 
     beforeDestroy () {
       this.removeWindowScroll();
+      this.$_heights = [];
+      this.$_sumTree.clear();
     },
 
     methods: {
-      getHeights () {
-        if (this.isFloatingItemHeight) {
-          if (this.$_heights.length !== this.items.length) {
-            this.updateHeightsLength();
-          }
-          // console.log('heights original', this.$_heights);
-          const heights = {};
-          // const field = this.heightField;
-          for (let i = 0, length = this.items.length, accumulator = 0; i < length; ++i) {
-            accumulator += this.$_heights[i];
-            heights[i] = accumulator;
-          }
-          return heights;
-        }
-      },
       getScroll () {
         const el = this.$el;
         let scroll;
@@ -246,12 +236,12 @@
           }
           scroll = {
             top: top,
-            bottom: top + height,
+            bottom: top + height
           };
         } else {
           scroll = {
             top: el.scrollTop,
-            bottom: el.scrollTop + el.clientHeight,
+            bottom: el.scrollTop + el.clientHeight
           };
         }
 
@@ -284,7 +274,6 @@
             const poolSize = parseInt(this.poolSize);
             const scrollTop = ~~(scroll.top / poolSize) * poolSize - buffer;
             const scrollBottom = Math.ceil(scroll.bottom / poolSize) * poolSize + buffer;
-            // console.log('scroll', scroll, scrollTop, scrollBottom);
 
             if (!force && (
               (scrollTop === this.$_oldScrollTop && scrollBottom === this.$_oldScrollBottom) || this.$_skip
@@ -297,8 +286,7 @@
             this.$_oldScrollBottom = scrollBottom;
 
             ({
-              startIndex, endIndex,
-              offsetTop, containerHeight,
+              startIndex, endIndex, offsetTop, containerHeight
             } = this.computeFrameOptions({ scrollTop, scrollBottom }));
 
             if (
@@ -312,10 +300,10 @@
               this.keysEnabled = !(startIndex > this.$_endIndex || endIndex < this.$_startIndex);
 
               this.itemContainerStyle = {
-                height: `${containerHeight}px`,
+                height: `${containerHeight}px`
               };
               this.itemsStyle = {
-                marginTop: `${offsetTop}px`,
+                marginTop: `${offsetTop}px`
               };
 
               if (this.delayPreviousItems) {
@@ -329,26 +317,17 @@
                 this.visibleItems = items.slice(startIndex, endIndex);
               }
 
-              // console.log('Visible items', this.visibleItems);
-
               this.emitUpdate && this.$emit('update', startIndex, endIndex);
 
               this.$_startIndex = startIndex;
               this.$_endIndex = endIndex;
               this.$_length = l;
               this.$_offsetTop = offsetTop;
-
-              // console.info('[Container Height From]:', this.$_height);
               this.$_height = containerHeight;
-              // console.info('[Container Height To]:', this.$_height);
 
               if (this.isFloatingItemHeight) {
                 this.$nextTick(() => {
-                  let isEqual = this.checkEqualHeights();
-                  if (!isEqual) {
-                    this.updateDynamicItemsHeights();
-                    // this.updateVisibleItems(force);
-                  }
+                  this.updateDynamicItemsHeights();
                 });
               }
             }
@@ -363,10 +342,11 @@
         let startIndex = -1;
         let endIndex = -1;
 
-        // Variable height mode
+        // Dynamic height mode
         if (this.isFloatingItemHeight) {
-          const heights = this.getHeights();
-          // console.log('heights', heights);
+          if (this.$_heights.length !== this.items.length) {
+            this.updateHeightsLength();
+          }
           let h;
           let a = 0;
           let b = l - 1;
@@ -376,10 +356,10 @@
           // Searching for startIndex
           do {
             oldI = i;
-            h = heights[i];
+            h = this.$_sumTree.sumAt(i); // heights[i];
             if (h < scrollTop) {
               a = i;
-            } else if (i < l && heights[i + 1] > scrollTop) {
+            } else if (i < l && this.$_sumTree.sumAt(i + 1) > scrollTop) {
               b = i;
             }
             i = ~~((a + b) / 2);
@@ -387,12 +367,8 @@
           i < 0 && (i = 0);
           startIndex = i;
 
-          // console.info('debug', startIndex, endIndex);
-
           // Searching for endIndex
-          for (endIndex = i; endIndex < l && heights[endIndex] < scrollBottom; endIndex++);
-
-          // console.info('debug', startIndex, endIndex);
+          for (endIndex = i; endIndex < l && this.$_sumTree.sumAt(endIndex) < scrollBottom; endIndex++);
 
           if (endIndex === -1) {
             endIndex = this.items.length - 1;
@@ -402,11 +378,9 @@
             endIndex > l && (endIndex = l);
           }
 
-          // console.info('debug', startIndex, endIndex);
-
           // For containers style
-          offsetTop = i > 0 ? heights[i - 1] : 0;
-          containerHeight = heights[l - 1];
+          offsetTop = this.$_sumTree.sumAt(i - 1);
+          containerHeight = this.$_sumTree.sumAt(l - 1);
         } else {
           // Fixed height mode
           startIndex = ~~(scrollTop / this.itemHeight);
@@ -424,48 +398,55 @@
           startIndex,
           endIndex,
           offsetTop,
-          containerHeight,
+          containerHeight
         };
-      },
-
-      checkEqualHeights () {
-        const children = this.$refs.items.children;
-        return this.visibleItems.every((item, index) => {
-          if (children && children[index]) {
-            let realItemHeight = children[index].offsetHeight;
-            return this.$_heights[this.$_startIndex + index] === realItemHeight;
-          }
-        });
       },
 
       updateHeightsLength () {
         const diffIndexes = this.items.length - this.$_heights.length;
-        // console.log('diffIndexes', diffIndexes);
         if (diffIndexes > 0) {
-          let dummyItems = Array(diffIndexes).fill(this.itemHeight || 50);
-          this.$_heights = this.$_heights.concat(dummyItems);
+          let tailItems = Array(diffIndexes).fill(this.itemHeight || 50);
+          this.$_heights = this.$_heights.concat(tailItems);
+          this.$_sumTree.extendBy(diffIndexes, this.itemHeight || 50);
         } else {
           this.$_heights.splice(diffIndexes);
+          this.$_sumTree.reduceBy(Math.abs(diffIndexes));
         }
       },
 
       updateDynamicItemsHeights () {
         const children = this.$refs.items.children;
+        let needTreeUpdate = false;
+
         for (let i = 0, length = this.visibleItems.length; i < length; ++i) {
           if (!children || !children[i]) {
             continue;
           }
           let realItemHeight = children[i].offsetHeight;
           let globalIndex = this.$_startIndex + i;
-          this.$_heights[ globalIndex ] = realItemHeight === 0
-            ? this.$_heights[ globalIndex ] : realItemHeight;
+          if (this.$_heights[ globalIndex ] !== realItemHeight) {
+            needTreeUpdate = true;
+            this.$_heights[ globalIndex ] = realItemHeight;
+          }
+        }
+
+        let [ from, to ] = [
+          this.$_startIndex,
+          this.$_startIndex + this.visibleItems.length - 1
+        ];
+        if (needTreeUpdate && from < to) {
+          this.$_sumTree.update({
+            from,
+            to,
+            values: this.$_heights.slice(from, to + 1)
+          });
         }
       },
 
       scrollToItem (index) {
         let scrollTop;
         if (this.isFloatingItemHeight) {
-          scrollTop = index > 0 ? this.getHeights()[index - 1] : 0;
+          scrollTop = this.$_sumTree.sumAt(index - 1);
         } else {
           scrollTop = index * this.itemHeight;
         }
@@ -521,8 +502,8 @@
             this.updateVisibleItems();
           });
         }
-      },
-    },
+      }
+    }
   };
 </script>
 
