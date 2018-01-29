@@ -1,7 +1,7 @@
-# ssr-virtual-scroller
+# vue-virtual-repeater
 
 
-[![npm](https://img.shields.io/npm/v/ssr-virtual-scroller.svg) ![npm](https://img.shields.io/npm/dm/ssr-virtual-scroller.svg)](https://www.npmjs.com/package/ssr-virtual-scroller)
+[![npm](https://img.shields.io/npm/v/vue-virtual-repeater.svg) ![npm](https://img.shields.io/npm/dm/vue-virtual-repeater.svg)](https://www.npmjs.com/package/vue-virtual-repeater)
 [![vue2](https://img.shields.io/badge/vue-2.x-brightgreen.svg)](https://vuejs.org/)
 
 Smooth scroll with any amount of data with SSR support and any height of an item.
@@ -15,10 +15,10 @@ Smooth scroll with any amount of data with SSR support and any height of an item
 # Installation
 
 ```
-npm install --save ssr-virtual-scroller
+npm install --save vue-virtual-repeater
 ```
 
-**⚠️ `ssr-virtual-scroller` now uses [vue-observe-visibility](https://github.com/Akryum/vue-observe-visibility#installation) to automatically refresh itself when shown to prevent display glitches. This means you need to include the polyfills needed by `vue-observe-visibility` for this to work.**
+**⚠️ `vue-virtual-repeater` now uses [vue-observe-visibility](https://github.com/Akryum/vue-observe-visibility#installation) to automatically refresh itself when shown to prevent display glitches. This means you need to include the polyfills needed by `vue-observe-visibility` for this to work.**
 
 ## Default import
 
@@ -26,7 +26,7 @@ Install all the components:
 
 ```javascript
 import Vue from 'vue'
-import VueVirtualScroller from 'ssr-virtual-scroller'
+import VueVirtualScroller from 'vue-virtual-repeater'
 
 Vue.use(VueVirtualScroller)
 ```
@@ -35,7 +35,7 @@ Use specific components:
 
 ```javascript
 import Vue from 'vue'
-import { VirtualScroller } from 'ssr-virtual-scroller'
+import { VirtualScroller } from 'vue-virtual-repeater'
 
 Vue.component('virtual-scroller', VirtualScroller)
 ```
@@ -43,16 +43,16 @@ Vue.component('virtual-scroller', VirtualScroller)
 **⚠️ A css file is included when importing the package:**
 
 ```js
-import 'ssr-virtual-scroller/dist/ssr-virtual-scroller.css'
+import 'vue-virtual-repeater/dist/vue-virtual-repeater.css'
 ```
 
 ## Browser
 
 ```html
-<link rel="stylesheet" href="ssr-virtual-scroller/dist/ssr-virtual-scroller.css"/>
+<link rel="stylesheet" href="vue-virtual-repeater/dist/vue-virtual-repeater.css"/>
 
 <script src="vue.js"></script>
-<script src="ssr-virtual-scroller/dist/ssr-virtual-scroller.min.js"></script>
+<script src="vue-virtual-repeater/dist/vue-virtual-repeater.min.js"></script>
 ```
 
 If Vue is detected, the plugin will be installed automatically. If not, install the component:

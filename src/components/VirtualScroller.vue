@@ -3,6 +3,7 @@
     :is="mainTag"
     class="virtual-scroller"
     :class="cssClass"
+    :style="itemContentStyle"
     @scroll.passive="handleScroll"
     v-observe-visibility="handleVisibilityChange">
 
@@ -56,6 +57,7 @@
 </template>
 
 <script>
+  import 'ssr-intersection-observer';
   import { ResizeObserver } from 'vue-resize';
   import { ObserveVisibility } from 'vue-observe-visibility';
   import { SumTree } from '../lib/sum-tree';
@@ -82,6 +84,10 @@
       itemHeight: {
         type: Number,
         default: null
+      },
+      maxContentHeight: {
+        type: [Number, String],
+        default: 500
       },
       anyHeight: {
         type: Boolean,
@@ -156,6 +162,13 @@
       cssClass () {
         return {
           'virtual-scroller_mode_page': this.pageMode
+        };
+      },
+
+      itemContentStyle () {
+        return {
+          maxHeight: typeof this.maxContentHeight === 'number'
+            ? `${this.maxContentHeight}px` : this.maxContentHeight
         };
       },
 

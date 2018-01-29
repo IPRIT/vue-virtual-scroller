@@ -2,8 +2,8 @@ import base from './rollup.config.base'
 
 const config = Object.assign({}, base, {
   output: {
-    name: 'ssr-virtual-scroller',
-    file: 'dist/ssr-virtual-scroller.esm.js',
+    name: 'vue-virtual-repeater',
+    file: 'dist/vue-virtual-repeater.esm.js',
     format: 'es',
   },
 })

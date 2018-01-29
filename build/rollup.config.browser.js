@@ -6,7 +6,7 @@ const config = Object.assign({}, base, {
   output: {
     exports: 'named',
     name: 'SsrVirtualScroller',
-    file: 'dist/ssr-virtual-scroller.min.js',
+    file: 'dist/vue-virtual-repeater.min.js',
     format: 'iife',
   },
 })
