@@ -1,7 +1,7 @@
 {
-  "name": "ssr-virtual-scroller",
+  "name": "vue-virtual-list",
   "description": "Smooth scrolling for any amount of data with any height of item",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "author": {
     "name": "Alexander Belov",
     "email": "ipritoflex@yandex.ru"
@@ -12,9 +12,9 @@
     "plugin"
   ],
   "license": "MIT",
-  "main": "dist/ssr-virtual-scroller.umd.js",
-  "module": "dist/ssr-virtual-scroller.esm.js",
-  "unpkg": "dist/ssr-virtual-scroller.min.js",
+  "main": "dist/vue-virtual-list.umd.js",
+  "module": "dist/vue-virtual-list.esm.js",
+  "unpkg": "dist/vue-virtual-list.min.js",
   "scripts": {
     "build": "npm run build:browser && npm run build:es && npm run build:umd",
     "build:browser": "rollup --config build/rollup.config.browser.js",
@@ -26,12 +26,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IPRIT/vue-virtual-scroller.git"
+    "url": "git+https://github.com/IPRIT/vue-virtual-list.git"
   },
   "bugs": {
-    "url": "https://github.com/IPRIT/vue-virtual-scroller/issues"
+    "url": "https://github.com/IPRIT/vue-virtual-list/issues"
   },
-  "homepage": "https://github.com/IPRIT/vue-virtual-scroller#readme",
+  "homepage": "https://github.com/IPRIT/vue-virtual-list#readme",
   "peerDependencies": {
     "vue": "^2.5.2"
   },
