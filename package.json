@@ -1,7 +1,7 @@
 {
   "name": "ssr-virtual-scroller",
   "description": "Smooth scrolling for any amount of data with any height of item",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "author": {
     "name": "Alexander Belov",
     "email": "ipritoflex@yandex.ru"
@@ -21,7 +21,7 @@
     "build:es": "rollup --config build/rollup.config.es.js",
     "build:umd": "rollup --config build/rollup.config.umd.js",
     "release": "node ./node_modules/.bin/standard-version",
-    "prepublish": "npm run build",
+    "prepublish": "npm run build && npm run release",
     "dev": "cross-env NODE_ENV=development rollup --config build/rollup.config.es.js --watch"
   },
   "repository": {
