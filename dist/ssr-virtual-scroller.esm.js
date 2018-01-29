@@ -205,6 +205,18 @@ var createClass = function () {
   };
 }();
 
+var consoleInfo = false;
+
+function consoleLog() {
+  var _console;
+
+  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+
+  consoleInfo && (_console = console).log.apply(_console, ['[Virtual Scroller]:'].concat(args));
+}
+
 var SumTree = function () {
   function SumTree() {
     classCallCheck(this, SumTree);
@@ -212,6 +224,12 @@ var SumTree = function () {
     this._tree = [];
     this._revertedTree = true;
   }
+
+  /**
+   * Allows to iterate over the instance
+   * @return {{next: Function}}
+   */
+
 
   createClass(SumTree, [{
     key: Symbol.iterator,
@@ -226,26 +244,39 @@ var SumTree = function () {
         }
       };
     }
+
+    /**
+     * Updating the tree between `from` and `to`
+     * elements with custom values
+     * @param {number[]} values
+     * @param {number} from
+     * @param {number} to
+     */
+
   }, {
     key: 'update',
     value: function update(_ref) {
-      var _ref$from = _ref.from,
+      var _ref$values = _ref.values,
+          values = _ref$values === undefined ? [] : _ref$values,
+          _ref$from = _ref.from,
           from = _ref$from === undefined ? 0 : _ref$from,
           _ref$to = _ref.to,
-          to = _ref$to === undefined ? values.length - 1 : _ref$to,
-          _ref$values = _ref.values,
-          values = _ref$values === undefined ? [] : _ref$values;
+          to = _ref$to === undefined ? values.length - 1 : _ref$to;
 
       this._assertEqual(to - from + 1, values.length, 'Received lengths must be equal');
       this._assertEqual(values.length <= this._tree.length, true, 'Sub array must be less than original tree');
       this._assertEqual(to - from >= 0, true, '`From` must be less than `to`');
 
+      consoleLog(from, to, values, 'length:', values.length);
+      consoleLog('original tree:', this._tree.slice());
+
       if (this._revertedTree) {
+        // updating reverted tree
         var prevValue = this._tree[to + 1];
         var diffValue = 0;
         var accumulator = prevValue || 0;
-        for (var index = to; index >= from; --index) {
-          accumulator += values[index];
+        for (var index = to, valuesIndex = values.length - 1; index >= from; --index) {
+          accumulator += values[valuesIndex--];
           if (index === from) {
             diffValue = accumulator - this._tree[from];
           }
@@ -256,11 +287,12 @@ var SumTree = function () {
           this._tree[_index] += diffValue;
         }
       } else {
+        // updating normal tree
         var _prevValue = this._tree[from - 1];
         var _diffValue = 0;
         var _accumulator = _prevValue || 0;
-        for (var _index2 = from; _index2 <= to; ++_index2) {
-          _accumulator += values[_index2];
+        for (var _index2 = from, _valuesIndex = 0; _index2 <= to; ++_index2) {
+          _accumulator += values[_valuesIndex++];
           if (_index2 === to) {
             _diffValue = _accumulator - this._tree[to];
           }
@@ -271,12 +303,28 @@ var SumTree = function () {
           this._tree[_index3] += _diffValue;
         }
       }
+      consoleLog('modified tree:', this._tree.slice());
     }
+
+    /**
+     * Returns sum of the element with specified index
+     * @param {number} elementIndex
+     * @return {number}
+     */
+
   }, {
     key: 'sumAt',
     value: function sumAt(elementIndex) {
       return this.sumBetween(0, elementIndex);
     }
+
+    /**
+     * Returns sum between two elements with specified indexes
+     * @param {number} fromIndex
+     * @param {number} endIndex
+     * @return {number}
+     */
+
   }, {
     key: 'sumBetween',
     value: function sumBetween() {
@@ -285,25 +333,52 @@ var SumTree = function () {
 
       return this._revertedTree ? this._tree[fromIndex] - (this._tree[endIndex + 1] || 0) : this._tree[endIndex] - (this._tree[fromIndex - 1] || 0);
     }
+
+    /**
+     * Extends tree by `number` with pad `value`
+     * @param {number} number
+     * @param {number} value
+     */
+
   }, {
     key: 'extendBy',
     value: function extendBy(number) {
       var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
+      consoleLog('adding ' + number + ' elements');
+      this._tree = this._tree.concat(Array(number).fill(0));
       var newItems = Array(number).fill(value);
-      this._tree = this._tree.concat(newItems);
+      this.update({
+        from: this._tree.length - number,
+        to: this._tree.length - 1,
+        values: newItems
+      });
     }
+
+    /**
+     * Reduce tree by `number`
+     * @param number
+     */
+
   }, {
     key: 'reduceBy',
     value: function reduceBy(number) {
+      consoleLog('reducing by ' + number + ' elements');
+      if (this._revertedTree) {
+        var deletedSum = this._tree[this._tree.length - number];
+        for (var index = this._tree.length - number - 1; index >= 0; --index) {
+          this._tree[index] -= deletedSum;
+        }
+      }
       this._tree.splice(-number);
     }
 
     /**
      * Performance mode
-     * `descending` - start is the most powerful but reduced to the end
+     * `descending` - start is the most powerful for CPU but reduced to the end
      * other modes - start is the most expensive for CPU but better to the end
-     * @param mode
+     * @default descending
+     * @param {*} mode
      */
 
   }, {
@@ -311,13 +386,29 @@ var SumTree = function () {
     value: function setPerformanceMode() {
       var mode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : SumTree.descending;
 
+      // todo: fix wrong height with ascending mode (needs investigation)
+      // although descending mode is more useful for us in most cases
       this._revertedTree = mode === SumTree.descending;
     }
+
+    /**
+     * Free memory by removing the tree
+     */
+
   }, {
     key: 'clear',
     value: function clear() {
       this._tree = [];
     }
+
+    /**
+     * Assert that two values are identically with strict equal
+     * @param {*} value1
+     * @param {*} value2
+     * @param {string} message
+     * @private
+     */
+
   }, {
     key: '_assertEqual',
     value: function _assertEqual(value1, value2, message) {
@@ -497,6 +588,8 @@ var VirtualScroller = { render: function render() {
   },
   beforeDestroy: function beforeDestroy() {
     this.removeWindowScroll();
+    this.$_heights = [];
+    this.$_sumTree.clear();
   },
 
 
@@ -609,7 +702,6 @@ var VirtualScroller = { render: function render() {
             if (_this2.isFloatingItemHeight) {
               _this2.$nextTick(function () {
                 _this2.updateDynamicItemsHeights();
-                // this.updateVisibleItems(force);
               });
             }
           }
@@ -627,7 +719,7 @@ var VirtualScroller = { render: function render() {
       var startIndex = -1;
       var endIndex = -1;
 
-      // Variable height mode
+      // Dynamic height mode
       if (this.isFloatingItemHeight) {
         if (this.$_heights.length !== this.items.length) {
           this.updateHeightsLength();
@@ -691,15 +783,11 @@ var VirtualScroller = { render: function render() {
       if (diffIndexes > 0) {
         var tailItems = Array(diffIndexes).fill(this.itemHeight || 50);
         this.$_heights = this.$_heights.concat(tailItems);
-        this.$_sumTree.extendBy(diffIndexes);
+        this.$_sumTree.extendBy(diffIndexes, this.itemHeight || 50);
       } else {
         this.$_heights.splice(diffIndexes);
-        this.$_sumTree.reduceBy(diffIndexes);
+        this.$_sumTree.reduceBy(Math.abs(diffIndexes));
       }
-      this.$_sumTree.update({
-        to: this.$_heights.length - 1,
-        values: this.$_heights
-      });
     },
     updateDynamicItemsHeights: function updateDynamicItemsHeights() {
       var children = this.$refs.items.children;
@@ -723,7 +811,8 @@ var VirtualScroller = { render: function render() {
 
       if (needTreeUpdate && from < to) {
         this.$_sumTree.update({
-          from: from, to: to,
+          from: from,
+          to: to,
           values: this.$_heights.slice(from, to + 1)
         });
       }
@@ -792,7 +881,7 @@ function registerComponents(Vue, prefix) {
 
 var plugin$4 = {
   // eslint-disable-next-line no-undef
-  version: "1.0.21",
+  version: "1.0.8",
   install: function install(Vue, options) {
     var finalOptions = Object.assign({}, {
       installComponents: true,

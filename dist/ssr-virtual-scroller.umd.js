@@ -211,6 +211,16 @@ var createClass = function () {
   };
 }();
 
+function consoleLog() {
+  var _console;
+
+  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+
+  (_console = console).log.apply(_console, ['[Virtual Scroller]:'].concat(args));
+}
+
 var SumTree = function () {
   function SumTree() {
     classCallCheck(this, SumTree);
@@ -219,94 +229,204 @@ var SumTree = function () {
     this._revertedTree = true;
   }
 
+  /**
+   * Allows to iterate over the instance
+   * @return {{next: Function}}
+   */
+
+
   createClass(SumTree, [{
+    key: Symbol.iterator,
+    value: function value() {
+      var index = 0;
+      return {
+        next: function next() {
+          return {
+            value: this.sumAt(index++),
+            done: index >= this._tree.length
+          };
+        }
+      };
+    }
+
+    /**
+     * Updating the tree between `from` and `to`
+     * elements with custom values
+     * @param {number[]} values
+     * @param {number} from
+     * @param {number} to
+     */
+
+  }, {
     key: 'update',
     value: function update(_ref) {
-      var _ref$from = _ref.from,
+      var _ref$values = _ref.values,
+          values = _ref$values === undefined ? [] : _ref$values,
+          _ref$from = _ref.from,
           from = _ref$from === undefined ? 0 : _ref$from,
           _ref$to = _ref.to,
-          to = _ref$to === undefined ? values.length - 1 : _ref$to,
-          _ref$values = _ref.values,
-          values = _ref$values === undefined ? [] : _ref$values;
+          to = _ref$to === undefined ? values.length - 1 : _ref$to;
 
-      this._assertEqual(to - from, values.length, 'Received lengths must be equal');
+      this._assertEqual(to - from + 1, values.length, 'Received lengths must be equal');
       this._assertEqual(values.length <= this._tree.length, true, 'Sub array must be less than original tree');
       this._assertEqual(to - from >= 0, true, '`From` must be less than `to`');
 
-      var prevValue = this._tree[this._normalizeTreeIndex(from - 1)];
-      var diffValue = 0;
-      var accumulator = prevValue || 0;
-      for (var index = from; index <= to; ++index) {
-        accumulator += values[index];
-        if (index === to) {
-          diffValue = accumulator - this._tree[this._normalizeTreeIndex(index)];
-        }
-        this._tree[this._normalizeTreeIndex(index)] = accumulator;
-      }
+      consoleLog(from, to, values, 'length:', values.length);
+      consoleLog('original tree:', this._tree.slice());
 
-      // update rest array after element with index `to`
-      for (var _index = to + 1, length = this._tree.length; _index < length; ++_index) {
-        this._tree[this._normalizeTreeIndex(_index)] += diffValue;
+      if (this._revertedTree) {
+        // updating reverted tree
+        var prevValue = this._tree[to + 1];
+        var diffValue = 0;
+        var accumulator = prevValue || 0;
+        for (var index = to, valuesIndex = values.length - 1; index >= from; --index) {
+          accumulator += values[valuesIndex--];
+          if (index === from) {
+            diffValue = accumulator - this._tree[from];
+          }
+          this._tree[index] = accumulator;
+        }
+        // update the rest array before `from` index
+        for (var _index = from - 1; _index >= 0; --_index) {
+          this._tree[_index] += diffValue;
+        }
+      } else {
+        // updating normal tree
+        var _prevValue = this._tree[from - 1];
+        var _diffValue = 0;
+        var _accumulator = _prevValue || 0;
+        for (var _index2 = from, _valuesIndex = 0; _index2 <= to; ++_index2) {
+          _accumulator += values[_valuesIndex++];
+          if (_index2 === to) {
+            _diffValue = _accumulator - this._tree[to];
+          }
+          this._tree[_index2] = _accumulator;
+        }
+        // update the rest array after `to` index
+        for (var _index3 = to + 1; _index3 < this._tree.length; ++_index3) {
+          this._tree[_index3] += _diffValue;
+        }
       }
+      consoleLog('modified tree:', this._tree.slice());
     }
+
+    /**
+     * Returns sum of the element with specified index
+     * @param {number} elementIndex
+     * @return {number}
+     */
+
+  }, {
+    key: 'sumAt',
+    value: function sumAt(elementIndex) {
+      return this.sumBetween(0, elementIndex);
+    }
+
+    /**
+     * Returns sum between two elements with specified indexes
+     * @param {number} fromIndex
+     * @param {number} endIndex
+     * @return {number}
+     */
+
+  }, {
+    key: 'sumBetween',
+    value: function sumBetween() {
+      var fromIndex = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+      var endIndex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this._tree.length - 1;
+
+      return this._revertedTree ? this._tree[fromIndex] - (this._tree[endIndex + 1] || 0) : this._tree[endIndex] - (this._tree[fromIndex - 1] || 0);
+    }
+
+    /**
+     * Extends tree by `number` with pad `value`
+     * @param {number} number
+     * @param {number} value
+     */
+
   }, {
     key: 'extendBy',
     value: function extendBy(number) {
       var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
+      consoleLog('adding ' + number + ' elements');
+      this._tree = this._tree.concat(Array(number).fill(0));
       var newItems = Array(number).fill(value);
-      this._tree = this._revertedTree ? newItems.concat(this._tree) : this._tree.concat(newItems);
+      this.update({
+        from: this._tree.length - number,
+        to: this._tree.length - 1,
+        values: newItems
+      });
     }
+
+    /**
+     * Reduce tree by `number`
+     * @param number
+     */
+
   }, {
     key: 'reduceBy',
     value: function reduceBy(number) {
-      this._revertedTree ? this._tree.splice(0, number) : this._tree.splice(-number);
+      consoleLog('reducing by ' + number + ' elements');
+      if (this._revertedTree) {
+        var deletedSum = this._tree[this._tree.length - number];
+        for (var index = this._tree.length - number - 1; index >= 0; --index) {
+          this._tree[index] -= deletedSum;
+        }
+      }
+      this._tree.splice(-number);
     }
 
     /**
      * Performance mode
-     * `descending` - start is the most powerful but reduced to the end
+     * `descending` - start is the most powerful for CPU but reduced to the end
      * other modes - start is the most expensive for CPU but better to the end
-     * @param mode
+     * @default descending
+     * @param {*} mode
      */
 
   }, {
     key: 'setPerformanceMode',
     value: function setPerformanceMode() {
-      var mode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'descending';
+      var mode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : SumTree.descending;
 
-      this._revertedTree = mode === 'descending';
+      // todo: fix wrong height with ascending mode (needs investigation)
+      // although descending mode is more useful for us in most cases
+      this._revertedTree = mode === SumTree.descending;
     }
+
+    /**
+     * Free memory by removing the tree
+     */
+
   }, {
     key: 'clear',
     value: function clear() {
       this._tree = [];
     }
-  }, {
-    key: '_normalizeTreeIndex',
-    value: function _normalizeTreeIndex(index) {
-      return this._revertedTree ? this._tree.length - 1 - index : index;
-    }
+
+    /**
+     * Assert that two values are identically with strict equal
+     * @param {*} value1
+     * @param {*} value2
+     * @param {string} message
+     * @private
+     */
+
   }, {
     key: '_assertEqual',
     value: function _assertEqual(value1, value2, message) {
       if (value1 !== value2) {
-        throw new Error(message);
+        // throw new Error(message);
+        console.error(value1, value2, message);
       }
-    }
-  }, {
-    key: 'firstIndex',
-    get: function get$$1() {
-      return this._normalizeTreeIndex(0);
-    }
-  }, {
-    key: 'lastIndex',
-    get: function get$$1() {
-      return this._normalizeTreeIndex(this._tree.length - 1);
     }
   }]);
   return SumTree;
 }();
+
+SumTree.descending = 1;
+SumTree.ascending = 2;
 
 var VirtualScroller = { render: function render() {
     var _vm = this;var _h = _vm.$createElement;var _c = _vm._self._c || _h;return _c(_vm.mainTag, { directives: [{ name: "observe-visibility", rawName: "v-observe-visibility", value: _vm.handleVisibilityChange, expression: "handleVisibilityChange" }], tag: "component", staticClass: "virtual-scroller", class: _vm.cssClass, on: { "&scroll": function scroll($event) {
@@ -447,7 +567,6 @@ var VirtualScroller = { render: function render() {
     this.$_updateDirty = false;
     this.$_heights = [];
     this.$_sumTree = new SumTree();
-    console.log(this.$_sumTree);
     this.$_sumTree.setPerformanceMode(SumTree.descending);
 
     var prerender = parseInt(this.prerender);
@@ -473,23 +592,12 @@ var VirtualScroller = { render: function render() {
   },
   beforeDestroy: function beforeDestroy() {
     this.removeWindowScroll();
+    this.$_heights = [];
+    this.$_sumTree.clear();
   },
 
 
   methods: {
-    getHeights: function getHeights() {
-      if (this.isFloatingItemHeight) {
-        if (this.$_heights.length !== this.items.length) {
-          this.updateHeightsLength();
-        }
-        var heights = {};
-        for (var i = 0, length = this.items.length, accumulator = 0; i < length; ++i) {
-          accumulator += this.$_heights[i];
-          heights[i] = accumulator;
-        }
-        return heights;
-      }
-    },
     getScroll: function getScroll() {
       var el = this.$el;
       var scroll = void 0;
@@ -597,11 +705,7 @@ var VirtualScroller = { render: function render() {
 
             if (_this2.isFloatingItemHeight) {
               _this2.$nextTick(function () {
-                var isEqual = _this2.checkEqualHeights();
-                if (!isEqual) {
-                  _this2.updateDynamicItemsHeights();
-                  // this.updateVisibleItems(force);
-                }
+                _this2.updateDynamicItemsHeights();
               });
             }
           }
@@ -619,9 +723,11 @@ var VirtualScroller = { render: function render() {
       var startIndex = -1;
       var endIndex = -1;
 
-      // Variable height mode
+      // Dynamic height mode
       if (this.isFloatingItemHeight) {
-        var heights = this.getHeights();
+        if (this.$_heights.length !== this.items.length) {
+          this.updateHeightsLength();
+        }
         var h = void 0;
         var a = 0;
         var b = l - 1;
@@ -631,10 +737,10 @@ var VirtualScroller = { render: function render() {
         // Searching for startIndex
         do {
           oldI = i;
-          h = heights[i];
+          h = this.$_sumTree.sumAt(i); // heights[i];
           if (h < scrollTop) {
             a = i;
-          } else if (i < l && heights[i + 1] > scrollTop) {
+          } else if (i < l && this.$_sumTree.sumAt(i + 1) > scrollTop) {
             b = i;
           }
           i = ~~((a + b) / 2);
@@ -643,7 +749,7 @@ var VirtualScroller = { render: function render() {
         startIndex = i;
 
         // Searching for endIndex
-        for (endIndex = i; endIndex < l && heights[endIndex] < scrollBottom; endIndex++) {}
+        for (endIndex = i; endIndex < l && this.$_sumTree.sumAt(endIndex) < scrollBottom; endIndex++) {}
 
         if (endIndex === -1) {
           endIndex = this.items.length - 1;
@@ -654,8 +760,8 @@ var VirtualScroller = { render: function render() {
         }
 
         // For containers style
-        offsetTop = i > 0 ? heights[i - 1] : 0;
-        containerHeight = heights[l - 1];
+        offsetTop = this.$_sumTree.sumAt(i - 1);
+        containerHeight = this.$_sumTree.sumAt(l - 1);
       } else {
         // Fixed height mode
         startIndex = ~~(scrollTop / this.itemHeight);
@@ -676,43 +782,49 @@ var VirtualScroller = { render: function render() {
         containerHeight: containerHeight
       };
     },
-    checkEqualHeights: function checkEqualHeights() {
-      var _this3 = this;
-
-      var children = this.$refs.items.children;
-      return this.visibleItems.every(function (item, index) {
-        if (children && children[index]) {
-          var realItemHeight = children[index].offsetHeight;
-          return _this3.$_heights[_this3.$_startIndex + index] === realItemHeight;
-        }
-      });
-    },
     updateHeightsLength: function updateHeightsLength() {
       var diffIndexes = this.items.length - this.$_heights.length;
       if (diffIndexes > 0) {
         var tailItems = Array(diffIndexes).fill(this.itemHeight || 50);
         this.$_heights = this.$_heights.concat(tailItems);
-        this.sumTree.extendBy(diffIndexes);
+        this.$_sumTree.extendBy(diffIndexes, this.itemHeight || 50);
       } else {
         this.$_heights.splice(diffIndexes);
-        this.sumTree.reduceBy(diffIndexes);
+        this.$_sumTree.reduceBy(Math.abs(diffIndexes));
       }
     },
     updateDynamicItemsHeights: function updateDynamicItemsHeights() {
       var children = this.$refs.items.children;
+      var needTreeUpdate = false;
+
       for (var i = 0, length = this.visibleItems.length; i < length; ++i) {
         if (!children || !children[i]) {
           continue;
         }
         var realItemHeight = children[i].offsetHeight;
         var globalIndex = this.$_startIndex + i;
-        this.$_heights[globalIndex] = realItemHeight === 0 ? this.$_heights[globalIndex] : realItemHeight;
+        if (this.$_heights[globalIndex] !== realItemHeight) {
+          needTreeUpdate = true;
+          this.$_heights[globalIndex] = realItemHeight;
+        }
+      }
+
+      var _ref2 = [this.$_startIndex, this.$_startIndex + this.visibleItems.length - 1],
+          from = _ref2[0],
+          to = _ref2[1];
+
+      if (needTreeUpdate && from < to) {
+        this.$_sumTree.update({
+          from: from,
+          to: to,
+          values: this.$_heights.slice(from, to + 1)
+        });
       }
     },
     scrollToItem: function scrollToItem(index) {
       var scrollTop = void 0;
       if (this.isFloatingItemHeight) {
-        scrollTop = index > 0 ? this.getHeights()[index - 1] : 0;
+        scrollTop = this.$_sumTree.sumAt(index - 1);
       } else {
         scrollTop = index * this.itemHeight;
       }
@@ -738,13 +850,13 @@ var VirtualScroller = { render: function render() {
       window.removeEventListener('resize', this.handleResize);
     },
     handleScroll: function handleScroll() {
-      var _this4 = this;
+      var _this3 = this;
 
       if (!this.$_scrollDirty) {
         this.$_scrollDirty = true;
         requestAnimationFrame(function () {
-          _this4.$_scrollDirty = false;
-          _this4.updateVisibleItems();
+          _this3.$_scrollDirty = false;
+          _this3.updateVisibleItems();
         });
       }
     },
@@ -755,12 +867,12 @@ var VirtualScroller = { render: function render() {
       }
     },
     handleVisibilityChange: function handleVisibilityChange(isVisible, entry) {
-      var _this5 = this;
+      var _this4 = this;
 
       if (this.$_ready && (isVisible || entry.boundingClientRect.width !== 0 || entry.boundingClientRect.height !== 0)) {
         this.$emit('visible');
         this.$nextTick(function () {
-          _this5.updateVisibleItems();
+          _this4.updateVisibleItems();
         });
       }
     }

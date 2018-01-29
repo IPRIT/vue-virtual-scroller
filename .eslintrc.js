@@ -5,7 +5,7 @@ module.exports = {
     sourceType: 'module'
   },
   // https://github.com/feross/standard/blob/master/RULES.md#javascript-standard-style
-  // extends: 'standard',
+  extends: 'standard',
   // required to lint *.vue files
   plugins: [
     'html'
@@ -22,7 +22,9 @@ module.exports = {
     // allow debugger during development
     'no-debugger': process.env.NODE_ENV === 'production' ? 2 : 0,
     // trailing comma
-    'comma-dangle': ['error', 'always-multiline'],
-    "semi": [2, "always"]
+    // 'comma-dangle': ['error', 'always-multiline'],
+    "semi": [2, "always"],
+    "skipBlankLines": true,
+    "padded-blocks": ["error", { "blocks": "never" }]
   }
-}
+};

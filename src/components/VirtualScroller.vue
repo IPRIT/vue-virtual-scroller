@@ -50,7 +50,7 @@
 
     <slot name="after-container"></slot>
 
-    <resize-observer @notify="handleResize" />
+    <resize-observer @notify="handleResize"></resize-observer>
 
   </component>
 </template>
@@ -64,83 +64,83 @@
     name: 'virtual-scroller',
 
     components: {
-      ResizeObserver,
+      ResizeObserver
     },
 
     directives: {
-      ObserveVisibility,
+      ObserveVisibility
     },
 
     props: {
       items: {
         type: Array,
-        required: true,
+        required: true
       },
       renderers: {
-        default: null,
+        default: null
       },
       itemHeight: {
         type: Number,
-        default: null,
+        default: null
       },
       anyHeight: {
         type: Boolean,
-        default: false,
+        default: false
       },
       typeField: {
         type: String,
-        default: 'type',
+        default: 'type'
       },
       keyField: {
         type: String,
-        default: 'id',
+        default: 'id'
       },
       heightField: {
         type: String,
-        default: 'height',
+        default: 'height'
       },
       mainTag: {
         type: String,
-        default: 'div',
+        default: 'div'
       },
       containerTag: {
         type: String,
-        default: 'div',
+        default: 'div'
       },
       containerClass: {
-        default: null,
+        default: null
       },
       contentTag: {
         type: String,
-        default: 'div',
+        default: 'div'
       },
       contentClass: {
-        default: null,
+        default: null
       },
       pageMode: {
         type: Boolean,
-        default: false,
+        default: false
       },
       buffer: {
         type: [Number, String],
-        default: 200,
+        default: 200
       },
       poolSize: {
         type: [Number, String],
-        default: 2000,
+        default: 2000
       },
       prerender: {
         type: [Number, String],
-        default: 0,
+        default: 0
       },
       emitUpdate: {
         type: Boolean,
-        default: false,
+        default: false
       },
       delayPreviousItems: {
         type: Boolean,
-        default: false,
-      },
+        default: false
+      }
     },
 
     data () {
@@ -148,20 +148,20 @@
         visibleItems: [],
         itemContainerStyle: null,
         itemsStyle: null,
-        keysEnabled: true,
+        keysEnabled: true
       };
     },
 
     computed: {
       cssClass () {
         return {
-          'virtual-scroller_mode_page': this.pageMode,
+          'virtual-scroller_mode_page': this.pageMode
         };
       },
 
       isFloatingItemHeight () {
         return this.itemHeight === null || this.anyHeight;
-      },
+      }
     },
 
     watch: {
@@ -169,13 +169,13 @@
         handler () {
           this.updateVisibleItems(true);
         },
-        deep: true,
+        deep: true
       },
       pageMode () {
         this.applyPageMode();
         this.updateVisibleItems(true);
       },
-      itemHeight: 'setDirty',
+      itemHeight: 'setDirty'
     },
 
     created () {
@@ -214,6 +214,8 @@
 
     beforeDestroy () {
       this.removeWindowScroll();
+      this.$_heights = [];
+      this.$_sumTree.clear();
     },
 
     methods: {
@@ -234,12 +236,12 @@
           }
           scroll = {
             top: top,
-            bottom: top + height,
+            bottom: top + height
           };
         } else {
           scroll = {
             top: el.scrollTop,
-            bottom: el.scrollTop + el.clientHeight,
+            bottom: el.scrollTop + el.clientHeight
           };
         }
 
@@ -284,8 +286,7 @@
             this.$_oldScrollBottom = scrollBottom;
 
             ({
-              startIndex, endIndex,
-              offsetTop, containerHeight,
+              startIndex, endIndex, offsetTop, containerHeight
             } = this.computeFrameOptions({ scrollTop, scrollBottom }));
 
             if (
@@ -299,10 +300,10 @@
               this.keysEnabled = !(startIndex > this.$_endIndex || endIndex < this.$_startIndex);
 
               this.itemContainerStyle = {
-                height: `${containerHeight}px`,
+                height: `${containerHeight}px`
               };
               this.itemsStyle = {
-                marginTop: `${offsetTop}px`,
+                marginTop: `${offsetTop}px`
               };
 
               if (this.delayPreviousItems) {
@@ -327,7 +328,6 @@
               if (this.isFloatingItemHeight) {
                 this.$nextTick(() => {
                   this.updateDynamicItemsHeights();
-                  // this.updateVisibleItems(force);
                 });
               }
             }
@@ -342,7 +342,7 @@
         let startIndex = -1;
         let endIndex = -1;
 
-        // Variable height mode
+        // Dynamic height mode
         if (this.isFloatingItemHeight) {
           if (this.$_heights.length !== this.items.length) {
             this.updateHeightsLength();
@@ -356,7 +356,7 @@
           // Searching for startIndex
           do {
             oldI = i;
-            h = this.$_sumTree.sumAt(i) // heights[i];
+            h = this.$_sumTree.sumAt(i); // heights[i];
             if (h < scrollTop) {
               a = i;
             } else if (i < l && this.$_sumTree.sumAt(i + 1) > scrollTop) {
@@ -398,7 +398,7 @@
           startIndex,
           endIndex,
           offsetTop,
-          containerHeight,
+          containerHeight
         };
       },
 
@@ -407,15 +407,11 @@
         if (diffIndexes > 0) {
           let tailItems = Array(diffIndexes).fill(this.itemHeight || 50);
           this.$_heights = this.$_heights.concat(tailItems);
-          this.$_sumTree.extendBy(diffIndexes);
+          this.$_sumTree.extendBy(diffIndexes, this.itemHeight || 50);
         } else {
           this.$_heights.splice(diffIndexes);
-          this.$_sumTree.reduceBy(diffIndexes);
+          this.$_sumTree.reduceBy(Math.abs(diffIndexes));
         }
-        this.$_sumTree.update({
-          to: this.$_heights.length - 1,
-          values: this.$_heights
-        });
       },
 
       updateDynamicItemsHeights () {
@@ -440,7 +436,8 @@
         ];
         if (needTreeUpdate && from < to) {
           this.$_sumTree.update({
-            from, to,
+            from,
+            to,
             values: this.$_heights.slice(from, to + 1)
           });
         }
@@ -505,8 +502,8 @@
             this.updateVisibleItems();
           });
         }
-      },
-    },
+      }
+    }
   };
 </script>
 
