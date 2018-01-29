@@ -15,7 +15,7 @@ export function getData (count, letters) {
       avatar: faker.internet.avatar(),
     }
     const letter = item.name.charAt(0).toLowerCase()
-    item.name = item.name.repeat(Math.floor(Math.random() * 100) + 1);
+    letters && (item.name = item.name.repeat(Math.floor(Math.random() * 100) + 1));
     raw[letter].push(item)
   }
 

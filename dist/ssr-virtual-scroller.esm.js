@@ -881,7 +881,7 @@ function registerComponents(Vue, prefix) {
 
 var plugin$4 = {
   // eslint-disable-next-line no-undef
-  version: "1.0.8",
+  version: "1.0.22",
   install: function install(Vue, options) {
     var finalOptions = Object.assign({}, {
       installComponents: true,
@@ -894,6 +894,7 @@ var plugin$4 = {
   }
 };
 
+// Auto-install
 var GlobalVue$2 = null;
 if (typeof window !== 'undefined') {
   GlobalVue$2 = window.Vue;

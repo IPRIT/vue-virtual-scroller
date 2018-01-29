@@ -211,6 +211,8 @@ var createClass = function () {
   };
 }();
 
+var consoleInfo = false;
+
 function consoleLog() {
   var _console;
 
@@ -218,7 +220,7 @@ function consoleLog() {
     args[_key] = arguments[_key];
   }
 
-  (_console = console).log.apply(_console, ['[Virtual Scroller]:'].concat(args));
+  consoleInfo && (_console = console).log.apply(_console, ['[Virtual Scroller]:'].concat(args));
 }
 
 var SumTree = function () {
@@ -885,7 +887,7 @@ function registerComponents(Vue, prefix) {
 
 var plugin$4 = {
   // eslint-disable-next-line no-undef
-  version: "1.0.21",
+  version: "1.0.22",
   install: function install(Vue, options) {
     var finalOptions = Object.assign({}, {
       installComponents: true,
